@@ -1,0 +1,32 @@
+#!/bin/sh
+. `dirname $0`/common_env
+#-------------------- 声明相关变量 --------------------
+
+# this file for erl -config, it config our app
+CONFIG_FILE=$SCRIPT_DIR/sys
+
+# erlang limit Settings
+NODENAME=hongkongresort_$(basename `cd $SCRIPT_DIR; pwd`)@${IP} # 用目录sh/master_1/file的master_1作为节点名字的后缀
+COOKIE=hongkongresort_cookie
+POLL=true
+SMP=auto
+ERL_MAX_PORTS=32000
+ERL_PROCESSES=250000
+ERL_MAX_ETS_TABLES=1400
+THREADS_ASYNC_THREAD=120
+ERL_MAX_ATOM=10485760
+DATETIME=`date "+%Y%m%d-%H:%M:%S"`
+export ERL_CRASH_DUMP=$SERVER_HOME/logs/$NODENAME/erl_crash_$DATETIME.dump ## for crash_dump
+export ERL_MAX_PORTS=32000
+export ERL_MAX_ETS_TABLES=14000
+
+# mnesia
+MNESIA_BASE=${SERVER_HOME}/mnesia
+MNESIA_DIR=${MNESIA_BASE}/${NODENAME}
+
+#-------------------- 声明结束 --------------------
+
+# custom_env可以覆盖上述定义的变量
+[ -f `dirname $0`/custom_env ] && . `dirname $0`/custom_env
+
+

@@ -1,0 +1,13 @@
+#!/bin/sh
+# Non-empty defaults should be set in server-env
+. `dirname $0`/server_env
+
+exec ${ERL_DIR}erl \
+    ${EBIN_ARGS} \
+    -noinput \
+    -setcookie $COOKIE \
+    -name serverctl@$IP \
+    -boot start_clean \
+    -s hongkongresort_ctrl \
+    -nodename $NODENAME \
+    -extra "$@"

@@ -1,0 +1,27 @@
+# -*- mode: sh -*-
+#!/bin/sh
+# not support link, please use real file path
+SCRIPT_DIR=$(cd ${0%/*} && pwd) # 执行脚本所在目录
+SCRIPT_NAME=${0##*/} # 可以用来做工具的节点名
+SERVER_HOME=${SCRIPT_DIR%/*/*} # 项目的根目录
+
+IPs=(`ip addr |sed -n 's/.*inet \([0-9\.]\+\).*/\1/p'`)
+IP=127.0.0.1
+for var in ${IPs[@]};do
+    case $var in
+        '192.168.1'*)
+            IP=$var
+            break;;
+        '10.9'*)
+            IP=$var
+            break;;
+    esac
+done
+
+EBIN_ROOT="${SERVER_HOME}/ebin ${SERVER_HOME}/deps/*/ebin"
+EBIN_ARGS="-pa $EBIN_ROOT"
+ERL_DIR= #如果是源码安装，erl路径不是在PATH里面，可以在custom_env填erl的目录全路径
+
+
+
+

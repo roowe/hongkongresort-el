@@ -1,0 +1,10 @@
+# -*- mode: sh -*-
+#!/bin/sh
+
+SCRIPT_DIR=$(cd ${0%/*} && pwd)
+SCRIPT_NAME=${0##*/}
+SERVER_HOME=${SCRIPT_DIR%/*}
+SERVER_EBIN_ROOT="${SERVER_HOME}/ebin ${SERVER_HOME}/deps/*/ebin"
+VMARGS_PATH="${SCRIPT_DIR}/tools_vm.args"
+ERL_DIR=
+
