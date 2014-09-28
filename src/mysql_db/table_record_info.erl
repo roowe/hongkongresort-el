@@ -6,8 +6,12 @@
 
 table(base_error_list) -> base_error_list;
 table(activity) -> activity;
+table(comment) -> comment;
+table(user) -> user;
 table(_) -> undefined.
 
 record(base_error_list) -> base_error_list;
 record(activity) -> activity;
+record(comment) -> comment;
+record(user) -> user;
 record(_) -> undefined.

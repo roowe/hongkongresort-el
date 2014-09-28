@@ -52,26 +52,26 @@ execute(Module, Req, Opts) ->
     case cowboy_req:method(Req) of
         <<"GET">> ->
             %% 字段一多，ParameterList可以考虑用record
-            Action = cowboy_req:binding(action, Req),
+            PathInfo = cowboy_req:path_info(Req),
             AllParameterList = proplists:get_value(get_parameter, Opts, []),
-            case proplists:get_value(Action, AllParameterList) of
+            case proplists:get_value(PathInfo, AllParameterList) of
                 undefined ->
-                    ?WARNING_MSG("Unknow Action ~p~n", [Action]),    
+                    ?WARNING_MSG("Unknow PathInfo ~p~n", [PathInfo]),    
                     reply_misc:ok_reply(json, 
-                                        {[{ret, ?INFO_ACTION_MISS}]},
+                                        ?JSON([{ret, ?INFO_ACTION_MISS}]),
                                         Req);
                 ParameterList ->
                     KeyValues = cowboy_req:parse_qs(Req),
                     case parse_parameter(KeyValues, ParameterList) of
                         {fail, Reason} ->
                             reply_misc:ok_reply(json, 
-                                                {[{ret, Reason}]},
+                                                ?JSON([{ret, Reason}]),
                                                 Req);
                         {ok, ValueList} ->
-                            ?DEBUG("GET Module ~p, Action ~p, KeyValues ~p~n", [Module, Action, KeyValues]),
+                            ?DEBUG("GET Module ~p, PathInfo ~p, KeyValues ~p~n", [Module, PathInfo, KeyValues]),
                             case erlang:function_exported(Module, execute_get, 3) of
                                 true ->
-                                    Module:execute_get(Action, ValueList, Req);
+                                    Module:execute_get(PathInfo, ValueList, Req);
                                 false ->
                                     reply_misc:method_not_allowed(Req)
                             end

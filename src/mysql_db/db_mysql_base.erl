@@ -7,6 +7,8 @@
 
 -export([select/2, select/3, update/3, delete/2]).
 
+-export([db_run_rows/2]).
+
 -export([
          r_update/2,
          r_delete/2,
@@ -189,6 +191,16 @@ run_affected(DbPool, SQL) ->
         Result when is_record(Result, error_packet) ->
             {error, Result}
     end.
+
+db_run_rows(#record_mysql_info{
+               db_pool = DbPool,
+               record_name = RecordName,
+               out_db_hook = OutDbHook
+              }, SQL) ->
+    run_rows(DbPool, SQL,
+             fun(List) ->
+                     [db_hook(OutDbHook, list_to_tuple([RecordName|Vals])) || Vals <- List]
+             end).
 
 run_rows(DbPool, SQL) ->
     case emysql:execute(DbPool, SQL) of

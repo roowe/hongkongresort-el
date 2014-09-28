@@ -1,7 +1,6 @@
 -module(hongkongresort).
 
 -export([start/0, stop_and_halt/0]).
--export([update_router/0]).
 -include("common.hrl").
 
 start() ->
@@ -14,5 +13,3 @@ stop_and_halt() ->
     init:stop(),
     ok.
 
-update_router() ->
-    hongkongresort_app:update_router().

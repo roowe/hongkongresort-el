@@ -9,4 +9,6 @@
 
 -define(MAX_WAIT, 16#ffffffff).
 
+-define(JSON(Value), {Value}).
+
 -endif.

@@ -4,7 +4,7 @@
 
 %% Application callbacks
 -export([start/2, stop/1]).
--export([update_router/0]).
+-export([update_router/0, generate_controller/0]).
 -include("common.hrl").
 
 %% ===================================================================
@@ -14,7 +14,7 @@
 start(_StartType, _StartArgs) ->
     app_misc:init(),
     Dispatch = dispatch(),
-    	{ok, _} = cowboy:start_http(http, 10, [{port, 8888}], 
+    {ok, _} = cowboy:start_http(http, 10, [{port, 8888}], 
                                 [
                                  {env, [{dispatch, Dispatch}]},
                                  {onresponse, fun error_hook/4},
@@ -26,6 +26,7 @@ start(_StartType, _StartArgs) ->
                                 ]),
     mysql_misc:init(),
     load_all(),
+    start_ets_cache_table(),
     {ok, SupPid} = hongkongresort_sup:start_link(),
     {ok, SupPid}.
 
@@ -47,7 +48,7 @@ generate_controller() ->
 controller_path(FileName) ->
     BaseName = filename:basename(FileName, ".beam"),
     Res = lists:sublist(BaseName, length(BaseName) - length("_controller")),
-    {"/el/" ++ Res ++ "/:action", list_to_atom(BaseName), []}.
+    {"/el/" ++ Res ++ "/[...]", list_to_atom(BaseName), []}.
 
 
 error_hook(404, Headers, <<>>, Req) ->
@@ -70,3 +71,6 @@ error_hook(_Code, _Headers, _Body, Req) ->
 load_all() ->
     {ok, Modules} = application:get_key(?APP_NAME, modules),
     [code:load_file(Module) || Module <- Modules].
+
+start_ets_cache_table() ->
+    {ok, _} = ets_cache:new_cache_table(user_cache, 300).

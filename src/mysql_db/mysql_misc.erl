@@ -1,5 +1,6 @@
 -module(mysql_misc).
 -export([init/0]).
+-export([offset/2]).
 
 init() ->
     DefaultOptions = [{user, app_misc:get_env(default_mysql_user)},
@@ -23,3 +24,5 @@ init_db(Options) ->
     Poolsize = proplists:get_value(pool_size, Options),
     emysql:add_pool(PoolId, Poolsize, User, Password, Host, Port, DataBase, utf8).
 
+offset(Page, Num) ->
+    (Page - 1) * Num.

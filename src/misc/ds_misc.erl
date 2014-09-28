@@ -251,6 +251,6 @@ get_int(Key, KVs) ->
             Int;
         {_, Bin} when is_binary(Bin) ->
             erlang:binary_to_integer(Bin);
-        {_, List} when is_binary(List) ->
-            erlang:binary_to_list(List)
+        {_, List} when is_list(List) ->
+            erlang:list_to_integer(List)
     end.

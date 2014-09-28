@@ -45,5 +45,6 @@ test_insert() ->
     r_list_insert_withnot_id([GenFun(Id) || Id <- lists:seq(1,10)]).
 
 
-page(Offset, Num) ->
+page(Page, Num) ->
+    Offset = mysql_misc:offset(Page, Num),
     db_mysql_base:select(?TABLE_CONF, undefined, [{limit, Offset, Num}]).
