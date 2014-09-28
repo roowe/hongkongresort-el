@@ -3,7 +3,7 @@
 
 -define(INFO_OK,                                0).       %%  成功
 -define(INFO_PARAMETER_MISS,                    1).       %%  参数不齐
--define(INFO_ACTION_MISS,                       2).       %%  没有该action
+-define(INFO_ACTION_MISS,                       2).       %%  action没有实现
 
 
 -endif.

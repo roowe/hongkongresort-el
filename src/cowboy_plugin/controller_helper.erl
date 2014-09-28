@@ -52,23 +52,31 @@ execute(Module, Req, Opts) ->
     case cowboy_req:method(Req) of
         <<"GET">> ->
             %% 字段一多，ParameterList可以考虑用record
-            ParameterList = proplists:get_value(get_parameter, Opts, []),
-            KeyValues = cowboy_req:parse_qs(Req),
-            case parse_parameter(KeyValues, ParameterList) of
-                {fail, Reason} ->
+            Action = cowboy_req:binding(action, Req),
+            AllParameterList = proplists:get_value(get_parameter, Opts, []),
+            case proplists:get_value(Action, AllParameterList) of
+                undefined ->
+                    ?WARNING_MSG("Unknow Action ~p~n", [Action]),    
                     reply_misc:ok_reply(json, 
-                                        {[{ret, Reason}]},
+                                        {[{ret, ?INFO_ACTION_MISS}]},
                                         Req);
-                {ok, ValueList} ->
-                    Action = cowboy_req:binding(action, Req),
-                    ?DEBUG("GET Module ~p, Action ~p, KeyValues ~p~n", [Module, Action, KeyValues]),
-                    case erlang:function_exported(Module, execute_get, 3) of
-                        true ->
-                            Module:execute_get(Action, ValueList, Req);
-                        false ->
-                            reply_misc:method_not_allowed(Req)
+                ParameterList ->
+                    KeyValues = cowboy_req:parse_qs(Req),
+                    case parse_parameter(KeyValues, ParameterList) of
+                        {fail, Reason} ->
+                            reply_misc:ok_reply(json, 
+                                                {[{ret, Reason}]},
+                                                Req);
+                        {ok, ValueList} ->
+                            ?DEBUG("GET Module ~p, Action ~p, KeyValues ~p~n", [Module, Action, KeyValues]),
+                            case erlang:function_exported(Module, execute_get, 3) of
+                                true ->
+                                    Module:execute_get(Action, ValueList, Req);
+                                false ->
+                                    reply_misc:method_not_allowed(Req)
+                            end
                     end
-            end;            
+            end;
         <<"POST">> ->
             %% TODO 支持Parameter
             case cowboy_req:has_body(Req) =:= true of

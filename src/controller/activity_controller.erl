@@ -14,8 +14,9 @@ init(_Type, Req, _Env) ->
 	{ok, Req, undefined}.
 
 handle(Req, State) ->
-    GetParameter = [{<<"page">>, int, required},
-                    {<<"num_items">>, int, required}],
+    GetParameter = [{<<"query">>, [{<<"page">>, int, required},
+                                   {<<"num_items">>, int, required}]
+                    }],
     Req1 = controller_helper:execute(?MODULE, Req, [{get_parameter, GetParameter}]),
 	{ok, Req1, State}.
 
@@ -27,12 +28,8 @@ execute_get(<<"query">>, [Page, NumItems], Req) ->
     reply_misc:ok_reply(json, 
                         {[{ret, ?INFO_OK},
                           {response, Response}]},
-                        Req);
-execute_get(Action, KeyValues, Req) ->
-    ?WARNING_MSG("Action ~p, KeyValues ~p~n", [Action, KeyValues]),
-    reply_misc:ok_reply(json, 
-                        {[{ret, ?INFO_ACTION_MISS}]},
                         Req).
+    
    
 to_client_activity(Activity) ->
     [{id, Activity#activity.id},
