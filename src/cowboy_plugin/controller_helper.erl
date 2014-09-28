@@ -1,8 +1,9 @@
 -module(controller_helper).
 
--export([execute/2]).
+-export([execute/2, execute/3]).
 
 -include("common.hrl").
+-include("define_info_0.hrl").
 
 -record(http_req, {
 	%% Transport.
@@ -44,19 +45,32 @@
 
 %% 并非符合通用规则，但是目前项目而言，确实是如此的规则
 execute(Module, Req) ->
+    execute(Module, Req, []).
+
+execute(Module, Req, Opts) ->
     ?DEBUG("~p~n", [ds_misc:rec_to_pl(record_info(fields, http_req), Req)]),
     case cowboy_req:method(Req) of
         <<"GET">> ->
+            %% 字段一多，ParameterList可以考虑用record
+            ParameterList = proplists:get_value(get_parameter, Opts, []),
             KeyValues = cowboy_req:parse_qs(Req),
-            Action = cowboy_req:binding(action, Req),
-            ?DEBUG("GET Module ~p, Action ~p, KeyValues ~p~n", [Module, Action, KeyValues]),
-            case erlang:function_exported(Module, execute_get, 3) of
-                true ->
-                    Module:execute_get(Action, KeyValues, Req);
-                false ->
-                    reply_misc:method_not_allowed(Req)
-            end;
+            case parse_parameter(KeyValues, ParameterList) of
+                {fail, Reason} ->
+                    reply_misc:ok_reply(json, 
+                                        {[{ret, Reason}]},
+                                        Req);
+                {ok, ValueList} ->
+                    Action = cowboy_req:binding(action, Req),
+                    ?DEBUG("GET Module ~p, Action ~p, KeyValues ~p~n", [Module, Action, KeyValues]),
+                    case erlang:function_exported(Module, execute_get, 3) of
+                        true ->
+                            Module:execute_get(Action, ValueList, Req);
+                        false ->
+                            reply_misc:method_not_allowed(Req)
+                    end
+            end;            
         <<"POST">> ->
+            %% TODO 支持Parameter
             case cowboy_req:has_body(Req) =:= true of
                 true ->
                     {ok, KeyValues, Req1} = cowboy_req:body_qs(Req),
@@ -75,4 +89,23 @@ execute(Module, Req) ->
             reply_misc:method_not_allowed(Req)
     end.
 
-    
+parse_parameter(KeyValues, ParameterList) ->
+    parse_parameter(KeyValues, ParameterList, []).
+
+parse_parameter(_, [], Acc) ->
+    {ok, lists:reverse(Acc)};
+parse_parameter(KeyValues, [{Parameter, DataType, OptionalOrRequired} | ParameterList], Acc) ->
+    Value = proplists:get_value(Parameter, KeyValues),
+    if
+        (Value =:= undefined orelse
+         Value =:= <<>>) andalso 
+        OptionalOrRequired =:= required ->
+            {fail, ?INFO_PARAMETER_MISS};
+        true ->
+            parse_parameter(KeyValues, ParameterList, [decoder(DataType, Value)|Acc])            
+    end.
+
+decoder(int, Value) ->
+    erlang:binary_to_integer(Value);
+decoder(_, Value) ->
+    Value.
