@@ -56,7 +56,7 @@ to_client_data(HeadComments, SubComments) ->
     ?DEBUG("~p ~p~n", [length(HeadComments), length(SubComments)]),
     to_client_data(HeadComments, SubComments, [[]]).
    
-to_client_data([], _, Response) ->
+to_client_data([], _, [_|Response]) ->
     Response;
 %% 没有次级评论，剩下都是首级评论
 to_client_data([HeadComment|RestHeadComments], 
