@@ -79,16 +79,9 @@ to_client_data([HeadComment|RestHeadComments] = HeadComments,
 -define(READ_MORE_NO, 1).
 -define(READ_MORE_YES, 2).
 
-to_head_comment_kv(HeadComment, SubComments0) ->
-    {ReadMore, SubComments} = 
-        case SubComments0 of
-            [SC1, SC2, SC3, _SC4] ->
-                {?READ_MORE_YES, [SC1, SC2, SC3]};
-            _ ->
-                {?READ_MORE_NO, SubComments0}
-        end,
+to_head_comment_kv(HeadComment, SubComments) ->
     SubCommentKVs = [to_sub_comment_kv(Comment) || Comment <- SubComments],
-    ?JSON([{read_more, ReadMore}, {sub_comments, SubCommentKVs}|to_comment_kv(HeadComment)]).
+    ?JSON([{sub_comment_count, HeadComment#comment.num_children}, {sub_comments, SubCommentKVs}|to_comment_kv(HeadComment)]).
 
 to_sub_comment_kv(Comment) ->
     ?JSON([?comment_kv(to),

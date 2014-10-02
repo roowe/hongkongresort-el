@@ -53,8 +53,10 @@ head_comments_page(ActivityId, Page, Num) ->
                                        {parent_id, '=', ?HEAD_COMMENT_PARENT_ID}}, 
                          [{limit, Offset, Num}]).
 
+sub_comments([]) ->
+    {ok, []};
 sub_comments(ParentIdS) ->
-    SQLs = [[<<"(">>, erl_mysql:select('*', comment, {parent_id, '=', Id}, {limit, 4}), <<")">>] || Id <- ParentIdS],
+    SQLs = [[<<"(">>, erl_mysql:select('*', comment, {parent_id, '=', Id}, {limit, 3}), <<")">>] || Id <- ParentIdS],
     SQL = iolist_to_binary(string:join(SQLs, " UNION ")),
     db_mysql_base:db_run_rows(?TABLE_CONF, SQL).
 
