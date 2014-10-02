@@ -16,7 +16,6 @@
           last_logged_out_time,                 %% 
           last_exit_time,                       %% 
           created_time,                         %% 
-          verification_code,                    %% 
-          password_reset_code                   %% 
+          verification_code                     %% 
          }).
 -endif.

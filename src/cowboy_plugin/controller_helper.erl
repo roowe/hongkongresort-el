@@ -71,7 +71,18 @@ execute(Module, Req, Opts) ->
                             ?DEBUG("GET Module ~p, PathInfo ~p, KeyValues ~p~n", [Module, PathInfo, KeyValues]),
                             case erlang:function_exported(Module, execute_get, 3) of
                                 true ->
-                                    Module:execute_get(PathInfo, ValueList, Req);
+                                    case Module:execute_get(PathInfo, ValueList, Req) of
+                                        {fail, Reason} ->
+                                            reply_misc:ok_reply(json, 
+                                                                ?JSON([{ret, Reason}]),
+                                                                Req);
+                                        {json, JSON} ->
+                                            reply_misc:ok_reply(json, 
+                                                                ?JSON([{ret, ?INFO_OK}, {response, JSON}]),
+                                                                Req);
+                                        Other ->
+                                            Other
+                                    end;
                                 false ->
                                     reply_misc:method_not_allowed(Req)
                             end

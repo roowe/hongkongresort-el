@@ -73,4 +73,7 @@ load_all() ->
     [code:load_file(Module) || Module <- Modules].
 
 start_ets_cache_table() ->
-    {ok, _} = ets_cache:new_cache_table(user_cache, 300).
+    {ok, _} = ets_cache:new_cache_table(user_cache, 300),
+    {ok, _} = ets_cache:new_cache_table(login_cache, 300),
+    {ok, _} = ets_cache:new_cache_table(image_cache, 300).
+

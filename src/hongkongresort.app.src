@@ -10,7 +10,8 @@
                   cowboy,
                   reloader,
                   emysql,
-                  ets_cache
+                  ets_cache,
+                  gproc
                  ]},
   {mod, { hongkongresort_app, []}},
   {env, [

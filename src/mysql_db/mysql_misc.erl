@@ -1,6 +1,7 @@
 -module(mysql_misc).
 -export([init/0]).
 -export([offset/2]).
+-export([orientation/1]).
 
 init() ->
     DefaultOptions = [{user, app_misc:get_env(default_mysql_user)},
@@ -26,3 +27,9 @@ init_db(Options) ->
 
 offset(Page, Num) ->
     (Page - 1) * Num.
+
+%% Orientation 在request中的取值範圍是{+1, -1}, 分別表示ascending,  descending.
+orientation(1) ->
+    'asc';
+orientation(-1) ->
+    'desc'.

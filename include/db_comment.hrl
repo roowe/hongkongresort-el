@@ -6,10 +6,11 @@
           id,                                   %% 
           content,                              %% 
           from,                                 %% 
-          to = -1,                              %% 
+          to,                                   %% 
           activity_id,                          %% 
           predecessor_id = -1,                  %% 
           generated_time,                       %% 
-          parent_id = -1                        %% 
+          parent_id = -1,                       %% 
+          num_children = 0                      %% 
          }).
 -endif.

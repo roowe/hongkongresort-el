@@ -11,6 +11,8 @@
           application_deadline,                 %% 
           capacity = 0,                         %% 
           status = 0,                           %% 
-          host_id                               %% 
+          host_id,                              %% 
+          num_applied = 0,                      %% 
+          num_selected = 0                      %% 
          }).
 -endif.
