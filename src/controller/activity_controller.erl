@@ -36,7 +36,7 @@ handle(Req, State) ->
     Req1 = controller_helper:execute(?MODULE, Req, [{get_parameter, GetParameter}]),
 	{ok, Req1, State}.
 
-%% /el/activity/query2?page=1&num_items=10&order_key=xxx&orientation=1&token=0a029a1451b987fd3401f3820ec5139a     
+%% /el/activity/query?page=1&num_items=10&order_key=id&orientation=1&token=0a029a1451b987fd3401f3820ec5139a     
 execute_get(?ACTION_QUERY, [Page, NumItems, OrderKey, Orientation, Token], _Req) ->   
     %%  # {"id", "begin_time", "application_deadline", "created_time"}
     case allow_order_key(OrderKey) of
@@ -57,7 +57,7 @@ execute_get(?ACTION_QUERY, [Page, NumItems, OrderKey, Orientation, Token], _Req)
                                                   id = Id,
                                                   host_id = HostId
                                                  } = Activity <- List],
-                    Response = ?JSON([{count, 0}, {activities, ActivityResponse}]),
+                    Response = ?JSON([{count, 0}, {page, Page}, {activities, ActivityResponse}]),
                     {json, Response}
             end
     end.

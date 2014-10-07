@@ -38,7 +38,7 @@ execute_get(?ACTION_QUERY, [Page, NumItems, ActivityId], Req) ->
                                id = Id
                               } <- HeadComments],
     {ok, SubComments} = db_comment:sub_comments(HeadCommentIds),
-    Response = to_client_data(HeadComments, SubComments),
+    Response = action_query_pack(Page, HeadComments, SubComments),
     reply_misc:ok_reply(json, 
                         {[{ret, ?INFO_OK},
                           {response, Response}]},
@@ -46,15 +46,21 @@ execute_get(?ACTION_QUERY, [Page, NumItems, ActivityId], Req) ->
 %% /el/comment/sub/query?page=1&num_items=10&parent_id=21
 execute_get(?ACTION_SUB_QUERY, [Page, NumItems, ParentId], Req) ->   
     {ok, List} = db_comment:sub_comments(Page, NumItems, ParentId),
-    Response = [to_sub_comment_kv(Comment) || Comment <- List],
+    Response = action_sub_query_pack(Page, List),
     reply_misc:ok_reply(json, 
                         {[{ret, ?INFO_OK},
                           {response, Response}]},
                         Req).
 
-to_client_data(HeadComments, SubComments) ->
+action_query_pack(Page, HeadComments, SubComments) ->
     ?DEBUG("~p ~p~n", [length(HeadComments), length(SubComments)]),
-    to_client_data(HeadComments, SubComments, [[]]).
+    ?JSON([{page, Page},
+           {comments, to_client_data(HeadComments, SubComments, [[]])}]).
+
+action_sub_query_pack(Page, List) ->
+    ?JSON([{page, Page},
+           {sub_comments, [to_sub_comment_kv(Comment) || Comment <- List]}]).
+  
    
 to_client_data([], _, [_|Response]) ->
     Response;
