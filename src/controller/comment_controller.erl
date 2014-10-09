@@ -87,7 +87,7 @@ to_client_data([HeadComment|RestHeadComments] = HeadComments,
 
 to_head_comment_kv(HeadComment, SubComments) ->
     SubCommentKVs = [to_sub_comment_kv(Comment) || Comment <- SubComments],
-    ?JSON([{sub_comment_count, HeadComment#comment.num_children}, {sub_comments, SubCommentKVs}|to_comment_kv(HeadComment)]).
+    ?JSON([{num_children, HeadComment#comment.num_children}, {sub_comments, SubCommentKVs}|to_comment_kv(HeadComment)]).
 
 to_sub_comment_kv(Comment) ->
     ?JSON([?comment_kv(to),
