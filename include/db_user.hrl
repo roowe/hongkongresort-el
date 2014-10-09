@@ -16,6 +16,8 @@
           last_logged_out_time,                 %% 
           last_exit_time,                       %% 
           created_time,                         %% 
-          verification_code                     %% 
+          verification_code,                    %% 
+          unread_count = 0,                     %% 
+          password_reset_code                   %% 
          }).
 -endif.

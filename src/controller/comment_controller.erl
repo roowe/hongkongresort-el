@@ -5,6 +5,7 @@
 -export([terminate/3]).
 
 -export([execute_get/3]).
+-export([pack/2]).
 
 -include("common.hrl").
 -include("db_comment.hrl").
@@ -32,32 +33,23 @@ handle(Req, State) ->
 	{ok, Req1, State}.
 
 %%  /el/comment/query?page=1&num_items=10&activity_id=30
-execute_get(?ACTION_QUERY, [Page, NumItems, ActivityId], Req) ->
+execute_get(?ACTION_QUERY, [Page, NumItems, ActivityId], _Req) ->
     {ok, HeadComments} = db_comment:head_comments_page(ActivityId, Page, NumItems),
     HeadCommentIds = [Id || #comment{
                                id = Id
                               } <- HeadComments],
     {ok, SubComments} = db_comment:sub_comments(HeadCommentIds),
-    Response = action_query_pack(Page, HeadComments, SubComments),
-    reply_misc:ok_reply(json, 
-                        {[{ret, ?INFO_OK},
-                          {response, Response}]},
-                        Req);
+    {pack, {Page, HeadComments, SubComments}};
 %% /el/comment/sub/query?page=1&num_items=10&parent_id=21
-execute_get(?ACTION_SUB_QUERY, [Page, NumItems, ParentId], Req) ->   
+execute_get(?ACTION_SUB_QUERY, [Page, NumItems, ParentId], _Req) ->   
     {ok, List} = db_comment:sub_comments(Page, NumItems, ParentId),
-    Response = action_sub_query_pack(Page, List),
-    reply_misc:ok_reply(json, 
-                        {[{ret, ?INFO_OK},
-                          {response, Response}]},
-                        Req).
+    {pack, {Page, List}}.
 
-action_query_pack(Page, HeadComments, SubComments) ->
+pack(?ACTION_QUERY, {Page, HeadComments, SubComments}) ->
     ?DEBUG("~p ~p~n", [length(HeadComments), length(SubComments)]),
     ?JSON([{page, Page},
-           {comments, to_client_data(HeadComments, SubComments, [[]])}]).
-
-action_sub_query_pack(Page, List) ->
+           {comments, to_client_data(HeadComments, SubComments, [[]])}]);
+pack(?ACTION_SUB_QUERY, {Page, List}) ->
     ?JSON([{page, Page},
            {sub_comments, [to_sub_comment_kv(Comment) || Comment <- List]}]).
   

@@ -72,16 +72,10 @@ execute(Module, Req, Opts) ->
                             case erlang:function_exported(Module, execute_get, 3) of
                                 true ->
                                     case Module:execute_get(PathInfo, ValueList, Req) of
-                                        {fail, Reason} ->
-                                            reply_misc:ok_reply(json, 
-                                                                ?JSON([{ret, Reason}]),
-                                                                Req);
-                                        {json, JSON} ->
-                                            reply_misc:ok_reply(json, 
-                                                                ?JSON([{ret, ?INFO_OK}, {response, JSON}]),
-                                                                Req);
+                                        {pack, ToPackData} ->
+                                            reply({json, Module:pack(PathInfo, ToPackData)}, Req);
                                         Other ->
-                                            Other
+                                            reply(Other, Req)
                                     end;
                                 false ->
                                     reply_misc:method_not_allowed(Req)
@@ -128,3 +122,14 @@ decoder(int, Value) ->
     erlang:binary_to_integer(Value);
 decoder(_, Value) ->
     Value.
+
+reply({fail, Reason}, Req) ->
+    reply_misc:ok_reply(json, 
+                        ?JSON([{ret, Reason}]),
+                        Req);
+reply({json, JSON}, Req) ->
+    reply_misc:ok_reply(json, 
+                        ?JSON([{ret, ?INFO_OK}, {response, JSON}]),
+                        Req);
+reply(Other, _Req) ->
+    Other.
