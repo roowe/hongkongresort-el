@@ -4,20 +4,30 @@
 -export([handle/2]).
 -export([terminate/3]).
 
--export([execute_get/3]).
--export([pack/2]).
+-export([execute_get/3, execute_post/3]).
+-export([get_pack/2]).
 
 -include("common.hrl").
 -include("db_comment.hrl").
+-include("db_activity.hrl").
 -include("define_info_0.hrl").
+-include("define_info_2.hrl").
 %% 使用宏的原因是因为Emacs解析<<>>和{}容易混了，所以用宏，同时，日后也方便修改
 -define(ACTION_QUERY, [<<"query">>]).
 -define(ACTION_SUB_QUERY, [<<"sub">>, <<"query">>]).
+
+-define(POST_ACTION_SUBMIT, [<<"submit">>]).
+-define(POST_ACTION_SUB_SUBMIT, [<<"sub">>, <<"submit">>]).
 
 -define(PARAM_PAGE, <<"page">>).
 -define(PARAM_NUM_ITEMS, <<"num_items">>).
 -define(PARAM_ACTIVITY_ID, <<"activity_id">>).
 -define(PARAM_PARENT_ID, <<"parent_id">>).
+-define(PARAM_TOKEN, <<"token">>). 
+-define(PARAM_CONTENT, <<"content">>).
+-define(PARAM_TO, <<"to">>).
+-define(PARAM_PREDECESSOR_ID, <<"predecessor_id">>).
+
 
 init(_Type, Req, _Env) ->
 	{ok, Req, undefined}.
@@ -29,7 +39,17 @@ handle(Req, State) ->
                     {?ACTION_SUB_QUERY, [{?PARAM_PAGE, int, required},
                                          {?PARAM_NUM_ITEMS, int, required},
                                          {?PARAM_PARENT_ID, int, required}]}],
-    Req1 = controller_helper:execute(?MODULE, Req, [{get_parameter, GetParameter}]),
+    PostParameter = [{?POST_ACTION_SUBMIT, [{?PARAM_TOKEN, binary, required},
+                                            {?PARAM_ACTIVITY_ID, int, required},
+                                             {?PARAM_CONTENT, binary, required}]},
+                     {?POST_ACTION_SUB_SUBMIT, [{?PARAM_TOKEN, binary, required},
+                                                {?PARAM_ACTIVITY_ID, int, required},
+                                                {?PARAM_CONTENT, binary, required},
+                                                {?PARAM_TO, int, required},
+                                                {?PARAM_PREDECESSOR_ID, int, required},
+                                                {?PARAM_PARENT_ID, int, required}]}],
+    Req1 = controller_helper:execute(?MODULE, Req, [{get_parameter, GetParameter},
+                                                    {post_parameter, PostParameter}]),
 	{ok, Req1, State}.
 
 %%  /el/comment/query?page=1&num_items=10&activity_id=30
@@ -45,15 +65,106 @@ execute_get(?ACTION_SUB_QUERY, [Page, NumItems, ParentId], _Req) ->
     {ok, List} = db_comment:sub_comments(Page, NumItems, ParentId),
     {pack, {Page, List}}.
 
-pack(?ACTION_QUERY, {Page, HeadComments, SubComments}) ->
+get_pack(?ACTION_QUERY, {Page, HeadComments, SubComments}) ->
     ?DEBUG("~p ~p~n", [length(HeadComments), length(SubComments)]),
     ?JSON([{page, Page},
            {comments, to_client_data(HeadComments, SubComments, [[]])}]);
-pack(?ACTION_SUB_QUERY, {Page, List}) ->
+get_pack(?ACTION_SUB_QUERY, {Page, List}) ->
     ?JSON([{page, Page},
            {sub_comments, [to_sub_comment_kv(Comment) || Comment <- List]}]).
-  
-   
+
+%% /el/comment/submit
+%% token=0a029a1451b987fd3401f3820ec5139a&content=test嗯&activity_id=5
+execute_post(?POST_ACTION_SUBMIT, [Token, ActivityId, Content], _Req) ->
+    case check_comment_submit(ActivityId, Token) of
+        {fail, Reason} ->
+            {fail, Reason};
+        {ok, UserId} ->
+            db_comment:insert(#comment{
+                                 content = Content,
+                                 activity_id = ActivityId,
+                                 from = UserId
+                                }),
+            {fail, ?INFO_OK}    
+    end;
+%% /el/comment/sub/submit
+%% token=0a029a1451b987fd3401f3820ec5139a&content=test嗯&activity_id=5&to=15&predecessor_id=47&parent_id=47
+execute_post(?POST_ACTION_SUB_SUBMIT, [Token, ActivityId, Content, 
+                                       To, PredecessorId, ParentId], _Req) ->
+    case check_comment_submit(ActivityId, Token) of
+        {fail, Reason} ->
+            {fail, Reason};
+        {ok, UserId} ->
+            case check_sub_comment_submit(ActivityId, PredecessorId, ParentId, To) of
+                {fail, Reason} ->
+                    {fail, Reason};
+                {ok, ParentComment} ->
+                    Comment = #comment{
+                                 content = Content,
+                                 activity_id = ActivityId,
+                                 from = UserId,
+                                 to = To,
+                                 predecessor_id = PredecessorId,
+                                 parent_id = ParentId
+                                },
+                    case db_comment:insert(Comment) of
+                        {ok, _} ->
+                            db_comment:update(ParentComment#comment{
+                                                num_children = ParentComment#comment.num_children + 1
+                                               }),
+                            {fail, ?INFO_OK};
+                        {error, _} ->                            
+                            {fail, ?INFO_DB_ERROR}
+                    end
+            end            
+    end.
+     
+
+check_comment_submit(ActivityId, Token) ->
+    case db_activity:find(ActivityId) of
+        {ok, []} ->
+            {fail, ?INFO_CANNT_COMMENT_ACTIVITY_NOT_FOUND};
+        {ok, [#activity{
+                 begin_time = BeginTime
+                }]} ->
+            BeginTimeStamp = time_misc:db_datetime_to_timestamp(BeginTime),
+            Now = time_misc:unixtime(),
+            if
+                Now >= BeginTimeStamp ->
+                    {fail, ?INFO_CANNT_COMMENT_ACTIVITY_HAS_BEGUN};
+                true ->
+                    lib_user:user_id_by_token(Token)
+            end
+    end.
+
+check_sub_comment_submit(ActivityId, Same, Same, To) ->
+    case db_comment:find(Same) of
+        {ok, [#comment{
+                 from = To,
+                 parent_id = -1,
+                 activity_id = ActivityId
+                } = ParentComment]} ->
+            {ok, ParentComment};
+        _Other ->
+            ?DEBUG("_Other ~p~n", [_Other]),
+            {fail, ?INFO_COMMENT_NOT_FOUND}
+    end;
+check_sub_comment_submit(ActivityId, PredecessorId, ParentId, To) ->
+    case db_comment:find([PredecessorId, ParentId]) of
+        {ok, [#comment{
+                 from = To,
+                 parent_id = ParentId,
+                 activity_id = ActivityId
+                }, 
+              #comment{
+                 activity_id = ActivityId
+                } = ParentComment]} ->
+            {ok, ParentComment};
+        _Other ->
+            ?DEBUG("_Other ~p~n", [_Other]),
+            {fail, ?INFO_COMMENT_NOT_FOUND}
+    end.
+
 to_client_data([], _, [_|Response]) ->
     Response;
 %% 没有次级评论，剩下都是首级评论

@@ -28,5 +28,27 @@ get(3) ->
     #base_error_list{error_code = 3,
 		     error_define = <<"INFO_PARAMETER_ERROR"/utf8>>,
 		     error_desc = <<"参数错误"/utf8>>};
+get(2002) ->
+    #base_error_list{error_code = 2002,
+		     error_define =
+			 <<"INFO_CANNT_COMMENT_ACTIVITY_NOT_FOUND"/utf8>>,
+		     error_desc = <<"活动不存在，无法评论"/utf8>>};
+get(2001) ->
+    #base_error_list{error_code = 2001,
+		     error_define =
+			 <<"INFO_CANNT_COMMENT_ACTIVITY_HAS_BEGUN"/utf8>>,
+		     error_desc = <<"活动已经开始，无法评论"/utf8>>};
+get(4) ->
+    #base_error_list{error_code = 4,
+		     error_define = <<"INFO_BODY_NOT_EXIST"/utf8>>,
+		     error_desc = <<"body为空"/utf8>>};
+get(2003) ->
+    #base_error_list{error_code = 2003,
+		     error_define = <<"INFO_COMMENT_NOT_FOUND"/utf8>>,
+		     error_desc = <<"评论找不到"/utf8>>};
+get(5) ->
+    #base_error_list{error_code = 5,
+		     error_define = <<"INFO_DB_ERROR"/utf8>>,
+		     error_desc = <<"数据库操作失败"/utf8>>};
 get(Var1) ->
     ?WARNING_MSG("get not find ~p", [{Var1}]), [].

@@ -68,12 +68,12 @@ execute(Module, Req, Opts) ->
                                                 ?JSON([{ret, Reason}]),
                                                 Req);
                         {ok, ValueList} ->
-                            ?DEBUG("GET Module ~p, PathInfo ~p, KeyValues ~p~n", [Module, PathInfo, KeyValues]),
+                            ?INFO_MSG("GET Module ~p, PathInfo ~p, KeyValues ~p~n", [Module, PathInfo, KeyValues]),
                             case erlang:function_exported(Module, execute_get, 3) of
                                 true ->
                                     case Module:execute_get(PathInfo, ValueList, Req) of
                                         {pack, ToPackData} ->
-                                            reply({json, Module:pack(PathInfo, ToPackData)}, Req);
+                                            reply({json, Module:get_pack(PathInfo, ToPackData)}, Req);
                                         Other ->
                                             reply(Other, Req)
                                     end;
@@ -84,23 +84,52 @@ execute(Module, Req, Opts) ->
             end;
         <<"POST">> ->
             %% TODO 支持Parameter
-            case cowboy_req:has_body(Req) =:= true of
-                true ->
-                    {ok, KeyValues, Req1} = cowboy_req:body_qs(Req),
-                    ?DEBUG("POST Module ~p, KeyValues ~p~n", [Module, KeyValues]),
-                    case erlang:function_exported(Module, execute_post, 2) of
-                        true ->
-                            Module:execute_post(KeyValues, Req1);
-                        false ->
-                            reply_misc:method_not_allowed(Req)
-                    end;
-                false ->
-                    reply_misc:bad_request(<<"Missing body">>, Req)
-            end;
+            execute_post(Module, Req, Opts);
         OtherMethod ->
             ?WARNING_MSG("Other Method ~ts~n", [OtherMethod]),
             reply_misc:method_not_allowed(Req)
     end.
+
+
+execute_post(Module, Req, Opts) ->
+    PathInfo = cowboy_req:path_info(Req),
+    AllParameterList = proplists:get_value(post_parameter, Opts, []),
+    case proplists:get_value(PathInfo, AllParameterList) of
+        undefined ->
+            ?WARNING_MSG("Unknow PathInfo ~p~n", [PathInfo]),    
+            reply_misc:ok_reply(json, 
+                                ?JSON([{ret, ?INFO_ACTION_MISS}]),
+                                Req);
+        ParameterList ->
+            case cowboy_req:has_body(Req) of
+                true ->
+                    {ok, KeyValues, Req1} = cowboy_req:body_qs(Req),
+                    case parse_parameter(KeyValues, ParameterList) of
+                        {fail, Reason} ->
+                            reply_misc:ok_reply(json, 
+                                                ?JSON([{ret, Reason}]),
+                                                Req1);
+                        {ok, ValueList} ->
+                            ?INFO_MSG("POST Module ~p, PathInfo ~p, KeyValues ~p~n", [Module, PathInfo, KeyValues]),
+                            case erlang:function_exported(Module, execute_post, 3) of
+                                true ->
+                                    case Module:execute_post(PathInfo, ValueList, Req1) of
+                                        {pack, ToPackData} ->
+                                            reply({json, Module:post_pack(PathInfo, ToPackData)}, Req1);
+                                        Other ->
+                                            reply(Other, Req1)
+                                    end;
+                                false ->
+                                    reply_misc:method_not_allowed(Req1)
+                            end
+                    end;
+                false ->
+                    reply_misc:ok_reply(json, 
+                                        ?JSON([{ret, ?INFO_BODY_NOT_EXIST}]),
+                                        Req)
+            end
+    end.
+
 
 parse_parameter(KeyValues, ParameterList) ->
     parse_parameter(KeyValues, ParameterList, []).

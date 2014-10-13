@@ -1,8 +1,8 @@
 -module(db_comment).
 
--export([head_comments_page/3]).
--export([sub_comments/1]).
--export([sub_comments/3]).
+-export([head_comments_page/3, find/1]).
+-export([sub_comments/1,
+         sub_comments/3]).
 
 -export([fix_comment/0]).
 
@@ -64,6 +64,13 @@ sub_comments(Page, Num, ParentId) ->
     Offset = mysql_misc:offset(Page, Num),
     db_mysql_base:select(?TABLE_CONF, {parent_id, '=', ParentId}, 
                          [{limit, Offset, Num}]).
+
+find(Id) 
+  when is_integer(Id) ->
+    db_mysql_base:select(?TABLE_CONF, {id, '=', Id});
+find(Ids) 
+  when is_list(Ids) ->
+    db_mysql_base:select(?TABLE_CONF, {id, 'in', Ids}, {order_by, {call, 'FIELD', [id|Ids]}}).
 
 fix_comment() ->
     {ok, Comments} = db_mysql_base:select(?TABLE_CONF, undefined),

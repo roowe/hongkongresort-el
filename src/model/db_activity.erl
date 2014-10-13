@@ -1,6 +1,7 @@
 -module(db_activity).
 
 -export([page/4]).
+-export([find/1]).
 
 -include("db_activity.hrl").
 -include("define_mysql.hrl").
@@ -9,18 +10,18 @@
                        db_pool = hongkongresort,
                        table_name = activity,
                        record_name = activity,
-                       fields = record_info(fields, activity),
-                       out_db_hook = fun(#activity{
-                                            created_time = CreatedTime,
-                                            begin_time = BeginTime,
-                                            application_deadline = ApplicationDeadline
-                                           } = Activity) ->
-                                             Activity#activity{
-                                               created_time = time_misc:db_timestamp_format(CreatedTime),
-                                               begin_time = time_misc:db_timestamp_format(BeginTime),
-                                               application_deadline = time_misc:db_timestamp_format(ApplicationDeadline)
-                                              }
-                                     end
+                       fields = record_info(fields, activity)%% ,
+                       %% out_db_hook = fun(#activity{
+                       %%                      created_time = CreatedTime,
+                       %%                      begin_time = BeginTime,
+                       %%                      application_deadline = ApplicationDeadline
+                       %%                     } = Activity) ->
+                       %%                       Activity#activity{
+                       %%                         created_time = time_misc:db_timestamp_format(CreatedTime),
+                       %%                         begin_time = time_misc:db_timestamp_format(BeginTime),
+                       %%                         application_deadline = time_misc:db_timestamp_format(ApplicationDeadline)
+                       %%                        }
+                       %%               end
                       }).
 
 
@@ -61,3 +62,6 @@ page(Page, Num, OrderKey, Orientation0) ->
     Offset = mysql_misc:offset(Page, Num),
     db_mysql_base:select(?TABLE_CONF, undefined, [{order_by, {OrderKey, Orientation}},
                                                   {limit, Offset, Num}]).
+
+find(Id) ->
+    db_mysql_base:select(?TABLE_CONF, {id, '=', Id}).
