@@ -1,4 +1,9 @@
 -module(controller_helper).
+-behaviour(cowboy_sub_protocol).
+
+-export([http_req/0]).
+
+-export([upgrade/6]).
 
 -export([execute/2, execute/3]).
 
@@ -42,13 +47,18 @@
 	onresponse = undefined 
 }).
 
+http_req() ->
+    record_info(fields, http_req).
+
+upgrade(Req, Env, Handler, HandlerState, _Timeout, _Hibernate) ->
+    {ok, execute(Handler, Req, HandlerState), Env}.
 
 %% 并非符合通用规则，但是目前项目而言，确实是如此的规则
 execute(Module, Req) ->
     execute(Module, Req, []).
 
 execute(Module, Req, Opts) ->
-    ?DEBUG("~p~n", [ds_misc:rec_to_pl(record_info(fields, http_req), Req)]),
+    ?DEBUG("~p~n", [ds_misc:rec_to_pl(http_req(), Req)]),
     case cowboy_req:method(Req) of
         <<"GET">> ->
             %% 字段一多，ParameterList可以考虑用record

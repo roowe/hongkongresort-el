@@ -1,7 +1,6 @@
 -module(activity_controller).
 
--export([init/3]).
--export([handle/2]).
+-export([init/2]).
 -export([terminate/3]).
 
 -export([execute_get/3]).
@@ -21,20 +20,16 @@
 -define(PARAM_ORIENTATION, <<"orientation">>). 
 -define(PARAM_TOKEN, <<"token">>). 
      
-
-init(_Type, Req, _Env) ->
-	{ok, Req, undefined}.
-
-handle(Req, State) ->
+init(Req, _Opts) ->
     GetParameter = [{?ACTION_QUERY, [{?PARAM_PAGE, int, required},
                                      {?PARAM_NUM_ITEMS, int, required},
                                      {?PARAM_ORDER_KEY, binary, required},
                                      {?PARAM_ORIENTATION, int, required},
-                                     {?PARAM_TOKEN, binary, optional} %%token在业务层没用的，被解析转成UserId传上来
+                                     {?PARAM_TOKEN, binary, optional}
                                     ]
                     }],
-    Req1 = controller_helper:execute(?MODULE, Req, [{get_parameter, GetParameter}]),
-	{ok, Req1, State}.
+    ControllerOpts = [{get_parameter, GetParameter}],
+	{controller_helper, Req, ControllerOpts}.
 
 %% /el/activity/query?page=1&num_items=10&order_key=id&orientation=1&token=0a029a1451b987fd3401f3820ec5139a     
 execute_get(?ACTION_QUERY, [Page, NumItems, OrderKey, Orientation, Token], _Req) ->   

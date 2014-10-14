@@ -1,7 +1,7 @@
 -module(comment_controller).
 
--export([init/3]).
--export([handle/2]).
+-export([init/2]).
+
 -export([terminate/3]).
 
 -export([execute_get/3, execute_post/3]).
@@ -29,10 +29,7 @@
 -define(PARAM_PREDECESSOR_ID, <<"predecessor_id">>).
 
 
-init(_Type, Req, _Env) ->
-	{ok, Req, undefined}.
-
-handle(Req, State) ->
+init(Req, _Env) ->
     GetParameter = [{?ACTION_QUERY, [{?PARAM_PAGE, int, required},
                                      {?PARAM_NUM_ITEMS, int, required},
                                      {?PARAM_ACTIVITY_ID, int, required}]},
@@ -48,9 +45,9 @@ handle(Req, State) ->
                                                 {?PARAM_TO, int, required},
                                                 {?PARAM_PREDECESSOR_ID, int, required},
                                                 {?PARAM_PARENT_ID, int, required}]}],
-    Req1 = controller_helper:execute(?MODULE, Req, [{get_parameter, GetParameter},
-                                                    {post_parameter, PostParameter}]),
-	{ok, Req1, State}.
+    ControllerOpts = [{get_parameter, GetParameter},
+                      {post_parameter, PostParameter}],
+	{controller_helper, Req, ControllerOpts}.
 
 %%  /el/comment/query?page=1&num_items=10&activity_id=30
 execute_get(?ACTION_QUERY, [Page, NumItems, ActivityId], _Req) ->
