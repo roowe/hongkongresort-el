@@ -1,5 +1,7 @@
 -module(db_notification).
 
+-export([find/1]).
+
 -include("db_notification.hrl").
 -include("define_mysql.hrl").
 
@@ -29,6 +31,8 @@ r_list_insert_withnot_id(List) ->
 r_list_insert_with_id(List) ->
     db_mysql_base:r_list_insert_with_id(?TABLE_CONF, List).
 
-
 %% ----------------------------------------
+
+find(Id) ->
+    db_mysql_base:select(?TABLE_CONF, {id, '=', Id}).
 
