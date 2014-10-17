@@ -25,8 +25,8 @@ websocket_handle(Data, Req, State) ->
     ?DEBUG("_Data ~p~n", [Data]),
 	{reply, Data, Req, State}.
 
-websocket_info(test, Req, State) ->
-    {reply, {text, <<"hello test">>}, Req, State};
+websocket_info({push, Msg}, Req, State) ->
+    {reply, {text, ws_pack(Msg)}, Req, State};
 websocket_info(_Info, Req, State) ->
     ?WARNING_MSG("Unknow Info ~p~n", [_Info]),
 	{ok, Req, State}.
@@ -39,4 +39,8 @@ subscribe(UserId) ->
     gproc:reg({p, l, {?MODULE, UserId}}).
 
 publish(UserId, Msg) ->
-    gproc:send({p, l, {?MODULE, UserId}}, Msg).
+    gproc:send({p, l, {?MODULE, UserId}}, {push, Msg}).
+
+%% 可以考虑在发起方进程打包json，这样二进制基于引用，消息的效率应该会高点
+ws_pack(JSON) ->
+    jiffy:encode(JSON).

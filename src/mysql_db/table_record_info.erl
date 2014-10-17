@@ -13,6 +13,7 @@ table(activity_image_relation) ->
     activity_image_relation;
 table(image) -> image;
 table(user_activity_relation) -> user_activity_relation;
+table(notification) -> notification;
 table(_) -> undefined.
 
 record(base_error_list) -> base_error_list;
@@ -25,4 +26,5 @@ record(activity_image_relation) ->
 record(image) -> image;
 record(user_activity_relation) ->
     user_activity_relation;
+record(notification) -> notification;
 record(_) -> undefined.

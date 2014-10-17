@@ -3,6 +3,7 @@
 -include("define_data_generate.hrl").
 -include("db_user_activity_relation.hrl").
 -include("db_user.hrl").
+-include("db_notification.hrl").
 -include("db_login.hrl").
 -include("db_image.hrl").
 -include("db_comment.hrl").
@@ -29,6 +30,8 @@ is_record(image) ->
     true;
 is_record(login) ->
     true;
+is_record(notification) ->
+    true;
 is_record(record_mysql_info) ->
     true;
 is_record(user) ->
@@ -51,6 +54,8 @@ get_fields(image) ->
     record_info(fields, image);
 get_fields(login) ->
     record_info(fields, login);
+get_fields(notification) ->
+    record_info(fields, notification);
 get_fields(record_mysql_info) ->
     record_info(fields, record_mysql_info);
 get_fields(user) ->
@@ -73,6 +78,8 @@ match_info(image) ->
     ?MATCH_SPEC(image);
 match_info(login) ->
     ?MATCH_SPEC(login);
+match_info(notification) ->
+    ?MATCH_SPEC(notification);
 match_info(record_mysql_info) ->
     ?MATCH_SPEC(record_mysql_info);
 match_info(user) ->
@@ -95,6 +102,8 @@ new(image) ->
      io:format("~w~n", [lists:zip(record_info(fields, image), tl(tuple_to_list(#image{})))]);
 new(login) ->
      io:format("~w~n", [lists:zip(record_info(fields, login), tl(tuple_to_list(#login{})))]);
+new(notification) ->
+     io:format("~w~n", [lists:zip(record_info(fields, notification), tl(tuple_to_list(#notification{})))]);
 new(record_mysql_info) ->
      io:format("~w~n", [lists:zip(record_info(fields, record_mysql_info), tl(tuple_to_list(#record_mysql_info{})))]);
 new(user) ->

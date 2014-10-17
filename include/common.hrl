@@ -5,6 +5,8 @@
 -include_lib("stdlib/include/qlc.hrl").
 -include("define_logger.hrl").
 -include("define_http.hrl").
+-include("define_ws_cmd.hrl").
+
 -define(APP_NAME, hongkongresort). %% 应用没启动起来的时候会用到
 
 -define(MAX_WAIT, 16#ffffffff).

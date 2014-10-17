@@ -10,6 +10,8 @@
 -include("common.hrl").
 -include("db_comment.hrl").
 -include("db_activity.hrl").
+-include("db_notification.hrl").
+
 -include("define_info_0.hrl").
 -include("define_info_2.hrl").
 %% 使用宏的原因是因为Emacs解析<<>>和{}容易混了，所以用宏，同时，日后也方便修改
@@ -76,22 +78,41 @@ execute_post(?POST_ACTION_SUBMIT, [Token, ActivityId, Content], _Req) ->
     case check_comment_submit(ActivityId, Token) of
         {fail, Reason} ->
             {fail, Reason};
-        {ok, UserId} ->
-            db_comment:insert(#comment{
-                                 content = Content,
-                                 activity_id = ActivityId,
-                                 from = UserId
-                                }),
-            {fail, ?INFO_OK}    
+        {ok, UserId, #activity{
+                        id = ActivityId,
+                        host_id = HostId
+                       } = Activity} ->
+            case db_comment:insert(#comment{
+                                      content = Content,
+                                      activity_id = ActivityId,
+                                      from = UserId
+                                     }) of 
+                {ok, #comment{
+                        id = CommentId
+                       }} ->
+                    Notification = #notification{
+                                      cmd = ?S2C_COMMENT_SUBMIT,
+                                      activity_id = ActivityId,
+                                      comment_id = CommentId,
+                                      from = UserId,
+                                      to = HostId,
+                                      content = notice_cotent(Activity, UserId)
+                                     },
+                    lib_notification:insert_and_push(Notification,
+                                                     fun notification_pack/1),
+                    {fail, ?INFO_OK};
+                {error, _} ->
+                    {fail, ?INFO_DB_ERROR}
+            end                
     end;
 %% /el/comment/sub/submit
-%% token=0a029a1451b987fd3401f3820ec5139a&content=test嗯&activity_id=5&to=15&predecessor_id=47&parent_id=47
+%% token=0b8e47d16124c77b1a406048967757e4&content=test嗯&activity_id=5&to=10&predecessor_id=47&parent_id=47
 execute_post(?POST_ACTION_SUB_SUBMIT, [Token, ActivityId, Content, 
                                        To, PredecessorId, ParentId], _Req) ->
     case check_comment_submit(ActivityId, Token) of
         {fail, Reason} ->
             {fail, Reason};
-        {ok, UserId} ->
+        {ok, UserId, Activity} ->
             case check_sub_comment_submit(ActivityId, PredecessorId, ParentId, To) of
                 {fail, Reason} ->
                     {fail, Reason};
@@ -105,7 +126,19 @@ execute_post(?POST_ACTION_SUB_SUBMIT, [Token, ActivityId, Content,
                                  parent_id = ParentId
                                 },
                     case db_comment:insert(Comment) of
-                        {ok, _} ->
+                        {ok, #comment{
+                                id = CommentId
+                               }} ->
+                            Notification = #notification{
+                                              cmd = ?S2C_COMMENT_SUB_SUBMIT,
+                                              activity_id = ActivityId,
+                                              comment_id = CommentId,
+                                              from = UserId,
+                                              to = To,
+                                              content = notice_cotent(Activity, UserId)
+                                             },
+                            lib_notification:insert_and_push(Notification, 
+                                                             fun notification_pack/1),
                             db_comment:update(ParentComment#comment{
                                                 num_children = ParentComment#comment.num_children + 1
                                                }),
@@ -123,14 +156,19 @@ check_comment_submit(ActivityId, Token) ->
             {fail, ?INFO_CANNT_COMMENT_ACTIVITY_NOT_FOUND};
         {ok, [#activity{
                  begin_time = BeginTime
-                }]} ->
+                } = Activity]} ->
             BeginTimeStamp = time_misc:db_datetime_to_timestamp(BeginTime),
             Now = time_misc:unixtime(),
             if
                 Now >= BeginTimeStamp ->
                     {fail, ?INFO_CANNT_COMMENT_ACTIVITY_HAS_BEGUN};
                 true ->
-                    lib_user:user_id_by_token(Token)
+                    case lib_user:user_id_by_token(Token) of
+                        {fail, Reason} ->
+                            {fail, Reason};
+                        {ok, UserId} ->
+                            {ok, UserId, Activity}
+                    end
             end
     end.
 
@@ -204,3 +242,18 @@ to_comment_kv(Comment) ->
 terminate(_Reason, _Req, _State) ->
 	ok.
 
+%% "你的活動 id <activity_id> 收到一條來到 <from> 的評論”.
+notice_cotent(#activity{
+                 id = ActivityId
+                }, FromId) ->
+    <<"你的活動 id "/utf8, 
+      (erlang:integer_to_binary(ActivityId))/binary, 
+      " 收到一條來到 "/utf8, 
+      (erlang:integer_to_binary(FromId))/binary, 
+      " 的評論"/utf8>>.
+
+notification_pack(Notification) ->
+    ?JSON([{id, Notification#notification.id},
+           {activity_id, Notification#notification.activity_id},
+           {from, Notification#notification.from},
+           {content, Notification#notification.content}]).
