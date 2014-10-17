@@ -15,6 +15,7 @@
                  ]},
   {mod, { hongkongresort_app, []}},
   {env, [
+         {log_level, debug},
          {log_dir, "logs/"},
          {default_mysql_user, "root"},
          {default_mysql_password, "root"},

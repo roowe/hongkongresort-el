@@ -4,7 +4,8 @@
 -include("common.hrl").
 
 start() ->
-    lager_misc:start(),
+    application:load(?APP_NAME),
+    log_misc:start_lager(app_misc:get_env(log_level, info)),
     app_misc:start(?APP_NAME).
 
 
