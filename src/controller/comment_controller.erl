@@ -152,11 +152,11 @@ execute_post(?POST_ACTION_SUB_SUBMIT, [Token, ActivityId, Content,
 
 check_comment_submit(ActivityId, Token) ->
     case db_activity:find(ActivityId) of
-        {ok, []} ->
-            {fail, ?INFO_CANNT_COMMENT_ACTIVITY_NOT_FOUND};
-        {ok, [#activity{
+        ?FAIL_REASON ->
+            ?FAIL_REASON;
+        {ok, #activity{
                  begin_time = BeginTime
-                } = Activity]} ->
+                } = Activity} ->
             BeginTimeStamp = time_misc:db_datetime_to_timestamp(BeginTime),
             Now = time_misc:unixtime(),
             if

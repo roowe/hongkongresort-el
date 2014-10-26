@@ -6,11 +6,14 @@
 -include("define_logger.hrl").
 -include("define_http.hrl").
 -include("define_ws_cmd.hrl").
+-include("define_info_0.hrl").
 
 -define(APP_NAME, hongkongresort). %% 应用没启动起来的时候会用到
 
 -define(MAX_WAIT, 16#ffffffff).
 
 -define(JSON(Value), {Value}).
+-define(FAIL_REASON, {fail, Reason}).
+-define(FAIL(Reason), {fail, Reason}).
 
 -endif.

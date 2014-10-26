@@ -3,6 +3,7 @@
 -export([head_comments_page/3, find/1]).
 -export([sub_comments/1,
          sub_comments/3]).
+-export([delete_by_activity_id/1]).
 
 -export([fix_comment/0]).
 
@@ -89,3 +90,6 @@ fix_comment() ->
                      end
              end,
     [FixFun(Comment) || Comment <- Comments].
+
+delete_by_activity_id(ActivityId) ->
+    db_mysql_base:delete(?TABLE_CONF, {activity_id, '=', ActivityId}).

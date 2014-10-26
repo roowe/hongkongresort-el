@@ -2,12 +2,13 @@
 
 -export([user/1, user_name/1]).
 -export([user_id_by_token/1]).
+-export([is_admin_user/1]).
 
 -include("db_user.hrl").
 -include("db_login.hrl").
 -include("define_time.hrl").
 -include("common.hrl").
--include("define_info_1.hrl").
+-include("define_user.hrl").
 
 user(Id) ->
     ets_cache:get_with_default(user_cache, Id,
@@ -51,3 +52,19 @@ user_id_by_token(Token) ->
                                end).
 
 
+is_admin_user(Token) ->
+    case lib_user:user_id_by_token(Token) of
+        ?FAIL_REASON ->
+            ?FAIL_REASON;
+        {ok, UserId} ->
+            case lib_user:user(UserId) of
+                [] ->
+                    ?FAIL(?INFO_NOT_FIND);
+                #user{
+                   group_id = ?USER_GROUP_ADMIN
+                  } ->
+                    ok;
+                _ ->
+                    ?FAIL(?INFO_NOT_ADMIN)
+            end
+    end.

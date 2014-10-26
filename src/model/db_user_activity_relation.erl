@@ -1,6 +1,7 @@
 -module(db_user_activity_relation).
 
 -export([user_activity_relation/2]).
+-export([delete_by_activity_id/1]).
 
 -include("db_user_activity_relation.hrl").
 -include("define_mysql.hrl").
@@ -34,5 +35,7 @@ r_list_insert_with_id(List) ->
 user_activity_relation(UserId, ActivityId) ->
     db_mysql_base:select(?TABLE_CONF, {{user_id, '=', UserId}, 'and', {activity_id, '=', ActivityId}}).
 
+delete_by_activity_id(ActivityId) ->
+    db_mysql_base:delete(?TABLE_CONF, {activity_id, '=', ActivityId}).
 
 

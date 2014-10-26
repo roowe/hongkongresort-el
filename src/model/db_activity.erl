@@ -2,15 +2,30 @@
 
 -export([page/4]).
 -export([find/1]).
+-export([delete_by_id/1]).
 
 -include("db_activity.hrl").
 -include("define_mysql.hrl").
+-include("define_info_0.hrl").
+-include("define_info_3.hrl").
+-include("common.hrl").
 
 -define(TABLE_CONF, #record_mysql_info{
                        db_pool = hongkongresort,
                        table_name = activity,
                        record_name = activity,
-                       fields = record_info(fields, activity)%% ,
+                       fields = record_info(fields, activity),
+                       in_db_hook = fun(#activity{
+                                            created_time = CreatedTime,
+                                            begin_time = BeginTime,
+                                            application_deadline = ApplicationDeadline
+                                           } = Activity) ->
+                                             Activity#activity{
+                                               created_time = time_misc:db_timestamp_format(CreatedTime),
+                                               begin_time = time_misc:db_timestamp_format(BeginTime),
+                                               application_deadline = time_misc:db_timestamp_format(ApplicationDeadline)
+                                              }
+                                     end
                        %% out_db_hook = fun(#activity{
                        %%                      created_time = CreatedTime,
                        %%                      begin_time = BeginTime,
@@ -22,6 +37,7 @@
                        %%                         application_deadline = time_misc:db_timestamp_format(ApplicationDeadline)
                        %%                        }
                        %%               end
+
                       }).
 
 
@@ -64,4 +80,15 @@ page(Page, Num, OrderKey, Orientation0) ->
                                                   {limit, Offset, Num}]).
 
 find(Id) ->
-    db_mysql_base:select(?TABLE_CONF, {id, '=', Id}).
+    case db_mysql_base:select(?TABLE_CONF, {id, '=', Id}) of
+        {ok, [Activity]} ->
+            {ok, Activity};
+        {ok, []} ->
+            {fail, ?INFO_ACTIVITY_NOT_FOUND};
+        {error, Error} ->
+            ?WARNING_MSG("DB Error ~p~n", [Error]),
+            {fail, ?INFO_DB_ERROR}
+    end.
+
+delete_by_id(Id) ->
+    db_mysql_base:delete(?TABLE_CONF, {id, '=', Id}).
