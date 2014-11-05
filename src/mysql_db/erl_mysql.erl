@@ -269,7 +269,7 @@ encode_val(Val) when is_atom(Val) ->
 encode_val(Val) when is_list(Val) ->
     list_to_binary(quote(Val));
 encode_val(Val) when is_integer(Val) ->
-    list_to_binary(integer_to_list(Val));
+    integer_to_binary(Val);
 encode_val(Val) when is_float(Val) ->
     list_to_binary(nicedecimal:format(Val));
 encode_val(Val) ->

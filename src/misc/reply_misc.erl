@@ -38,21 +38,23 @@ method_not_allowed(Req) ->
 ok_reply(Type, Content, Req) ->
     cowboy_req:reply(?HTTP_OK, [content_type(Type)], content(Type, Content), Req).
 
-content(json, {KVs}) ->
-    Json = 
-        case proplists:get_value(ret, KVs) of
-            undefined ->
-                {KVs};
-            Ret ->
-                case data_base_error_list:get(Ret) of
-                    [] ->
-                        {[{desc, <<"未更新的错误码"/utf8>>} |KVs]};
-                    #base_error_list{
-                       error_desc = Desc
-                      } ->
-                        {[{desc, Desc} |KVs]}
-                end
-        end,
+%% content(json, {KVs}) ->
+%%     Json = 
+%%         case proplists:get_value(ret, KVs) of
+%%             undefined ->
+%%                 {KVs};
+%%             Ret ->
+%%                 case data_base_error_list:get(Ret) of
+%%                     [] ->
+%%                         {[{desc, <<"未更新的错误码"/utf8>>} |KVs]};
+%%                     #base_error_list{
+%%                        error_desc = Desc
+%%                       } ->
+%%                         {[{desc, Desc} |KVs]}
+%%                 end
+%%         end,
+%%     jiffy:encode(Json);
+content(json, Json) ->
     jiffy:encode(Json);
 content(_, Content) ->
     Content.
