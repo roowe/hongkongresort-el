@@ -13,6 +13,8 @@
           status = 0,                           %% 
           host_id,                              %% 
           num_applied = 0,                      %% 
-          num_selected = 0                      %% 
+          num_selected = 0,                     %% 
+          last_accepted_time,                   %% 
+          last_rejected_time                    %% 
          }).
 -endif.

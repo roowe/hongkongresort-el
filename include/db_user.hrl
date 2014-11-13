@@ -12,12 +12,10 @@
           authentication_status = 0,            %% 
           gender = 0,                           %% 
           avatar = 0,                           %% 
-          last_logged_in_time,                  %% 
-          last_logged_out_time,                 %% 
-          last_exit_time,                       %% 
           created_time,                         %% 
           verification_code,                    %% 
           unread_count = 0,                     %% 
-          password_reset_code                   %% 
+          password_reset_code,                  %% 
+          salt                                  %% 
          }).
 -endif.

@@ -7,7 +7,9 @@
 -include("db_notification.hrl").
 
 insert_and_push(Notification0, DataFun) ->
-    case db_notification:insert(Notification0) of
+    case db_notification:insert(Notification0#notification{
+                                  generated_time = time_misc:long_unixtime()
+                                 }) of
         {ok, Notification} ->
             Msg = ?JSON([{cmd, Notification#notification.cmd}, {data, DataFun(Notification)}]),
             ws_controller:publish(Notification#notification.to, Msg);

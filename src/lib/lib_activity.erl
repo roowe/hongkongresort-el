@@ -9,12 +9,12 @@
 -include("define_activity.hrl").
 
 admin_accept(ActivityId, Token) ->
-    change_activity_status(ActivityId, Token, ?ACTIVITY_STATUS_ACCEPTED).
+    change_activity_status(ActivityId, Token, ?ACTIVITY_STATUS_ACCEPTED, #activity.last_accepted_time).
 
 admin_reject(ActivityId, Token) ->
-    change_activity_status(ActivityId, Token, ?ACTIVITY_STATUS_REJECTED).
+    change_activity_status(ActivityId, Token, ?ACTIVITY_STATUS_REJECTED, #activity.last_rejected_time).
 
-change_activity_status(ActivityId, Token, Status) -> 
+change_activity_status(ActivityId, Token, Status, UpdateTimeStampPos) -> 
     case lib_user:is_admin_user(Token) of
         ?FAIL_REASON ->
             ?FAIL_REASON;
@@ -27,18 +27,17 @@ change_activity_status(ActivityId, Token, Status) ->
                        }} ->
                     ?FAIL(?INFO_ACTIVITY_SAME_STATUS);
                 {ok, #activity{
-                        application_deadline = ApplicationDeadline
-                       }=Activity} ->
-                    ApplicationDeadlineTimeStamp = time_misc:db_datetime_to_timestamp(ApplicationDeadline),            
-                    Now = time_misc:unixtime(),
+                        application_deadline = ApplicationDeadlineTimeStamp
+                       }=Activity} ->          
+                    Now = time_misc:long_unixtime(),
                     if
                         ApplicationDeadlineTimeStamp =< Now ->
                             %% 活动已过期
                             ?FAIL(?INFO_ACTIVITY_APPLICATION_DEADLINE_EXPIRED);
-                        true ->
-                            db_activity:update(Activity#activity{
-                                                 status = Status
-                                                }),
+                        true ->                           
+                            db_activity:update(setelement(UpdateTimeStampPos, Activity#activity{
+                                                                                status = Status
+                                                                               }, time_misc:long_unixtime())),
                             ?FAIL(?INFO_OK)
                     end
             end

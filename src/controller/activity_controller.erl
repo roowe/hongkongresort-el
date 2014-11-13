@@ -88,9 +88,9 @@ pack(Activity, Images, HostUser, Relation) ->
     Base = [?activity_kv(id),
             ?activity_kv(title),
             ?activity_kv(content),
-            ?activity_kv(created_time, time_misc:db_timestamp_format),
-            ?activity_kv(begin_time, time_misc:db_timestamp_format),
-            ?activity_kv(application_deadline, time_misc:db_timestamp_format),
+            ?activity_kv(created_time),
+            ?activity_kv(begin_time),
+            ?activity_kv(application_deadline),
             ?activity_kv(capacity),
             ?activity_kv(status)],
     AddHost = if

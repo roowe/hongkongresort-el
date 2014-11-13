@@ -8,7 +8,6 @@
           relation,                             %% 
           generated_time,                       %% 
           last_applying_time,                   %% 
-          last_accepted_time,                   %% 
-          last_rejected_time                    %% 
+          last_selected_time                    %% 
          }).
 -endif.

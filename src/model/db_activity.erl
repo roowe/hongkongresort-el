@@ -14,30 +14,7 @@
                        db_pool = hongkongresort,
                        table_name = activity,
                        record_name = activity,
-                       fields = record_info(fields, activity),
-                       in_db_hook = fun(#activity{
-                                            created_time = CreatedTime,
-                                            begin_time = BeginTime,
-                                            application_deadline = ApplicationDeadline
-                                           } = Activity) ->
-                                             Activity#activity{
-                                               created_time = time_misc:db_timestamp_format(CreatedTime),
-                                               begin_time = time_misc:db_timestamp_format(BeginTime),
-                                               application_deadline = time_misc:db_timestamp_format(ApplicationDeadline)
-                                              }
-                                     end
-                       %% out_db_hook = fun(#activity{
-                       %%                      created_time = CreatedTime,
-                       %%                      begin_time = BeginTime,
-                       %%                      application_deadline = ApplicationDeadline
-                       %%                     } = Activity) ->
-                       %%                       Activity#activity{
-                       %%                         created_time = time_misc:db_timestamp_format(CreatedTime),
-                       %%                         begin_time = time_misc:db_timestamp_format(BeginTime),
-                       %%                         application_deadline = time_misc:db_timestamp_format(ApplicationDeadline)
-                       %%                        }
-                       %%               end
-
+                       fields = record_info(fields, activity)
                       }).
 
 
@@ -45,10 +22,10 @@
 -export([update/1, delete/1, insert/1, r_list_insert_withnot_id/1, r_list_insert_with_id/1]).
 
 update(Record)->
-    db_mysql_base:r_update(?TABLE_CONF, Record).
+    {ok, _} = db_mysql_base:r_update(?TABLE_CONF, Record).
 
 delete(RecordOrList) ->
-    db_mysql_base:r_delete(?TABLE_CONF, RecordOrList).
+    {ok, _} = db_mysql_base:r_delete(?TABLE_CONF, RecordOrList).
 
 insert(Record) ->
     db_mysql_base:r_insert(?TABLE_CONF, Record).

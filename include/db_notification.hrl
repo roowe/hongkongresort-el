@@ -3,7 +3,7 @@
 -define(DB_NOTIFICATION_HRL, true).
 %% notification => notification
 -record(notification, {
-          id,                                   %% 
+          id,
           is_read = 0,                          %% 
           from,                                 %% 
           to,                                   %% 
@@ -13,6 +13,7 @@
           assessment_id,                        %% 
           cmd,                                  %% 
           relation,                             %% 
-          status                                %% 
+          status,                               %% 
+          generated_time                        %% 
          }).
 -endif.

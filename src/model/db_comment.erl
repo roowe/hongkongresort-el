@@ -14,14 +14,7 @@
                        db_pool = hongkongresort,
                        table_name = comment,
                        record_name = comment,
-                       fields = record_info(fields, comment),
-                       out_db_hook = fun(#comment{
-                                            generated_time = GeneratedTime
-                                           } = Comment) ->
-                                             Comment#comment{
-                                               generated_time = time_misc:db_timestamp_format(GeneratedTime)
-                                              }
-                                     end
+                       fields = record_info(fields, comment)
                       }).
 
 

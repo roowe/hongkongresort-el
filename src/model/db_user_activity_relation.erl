@@ -10,7 +10,7 @@
                        db_pool = hongkongresort,
                        table_name = user_activity_relation,
                        record_name = user_activity_relation,
-                       fields = record_info(fields, user_activity_relation)                      
+                       fields = record_info(fields, user_activity_relation)
                       }).
 
 %% --------------------通用代码--------------------

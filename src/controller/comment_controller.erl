@@ -85,7 +85,8 @@ execute_post(?POST_ACTION_SUBMIT, [Token, ActivityId, Content], _Req) ->
             case db_comment:insert(#comment{
                                       content = Content,
                                       activity_id = ActivityId,
-                                      from = UserId
+                                      from = UserId,
+                                      generated_time = time_misc:long_unixtime()
                                      }) of 
                 {ok, #comment{
                         id = CommentId
@@ -123,7 +124,8 @@ execute_post(?POST_ACTION_SUB_SUBMIT, [Token, ActivityId, Content,
                                  from = UserId,
                                  to = To,
                                  predecessor_id = PredecessorId,
-                                 parent_id = ParentId
+                                 parent_id = ParentId,
+                                 generated_time = time_misc:long_unixtime()
                                 },
                     case db_comment:insert(Comment) of
                         {ok, #comment{
@@ -155,10 +157,9 @@ check_comment_submit(ActivityId, Token) ->
         ?FAIL_REASON ->
             ?FAIL_REASON;
         {ok, #activity{
-                 begin_time = BeginTime
+                 begin_time = BeginTimeStamp
                 } = Activity} ->
-            BeginTimeStamp = time_misc:db_datetime_to_timestamp(BeginTime),
-            Now = time_misc:unixtime(),
+            Now = time_misc:long_unixtime(),
             if
                 Now >= BeginTimeStamp ->
                     {fail, ?INFO_CANNT_COMMENT_ACTIVITY_HAS_BEGUN};

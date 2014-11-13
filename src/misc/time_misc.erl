@@ -1,6 +1,7 @@
 -module(time_misc).
 -export([
-         unixtime/0
+         unixtime/0,
+         long_unixtime/0
         ]).
 
 -export([datetime_to_timestamp/1, datetime_to_timestamp/2]).
@@ -18,6 +19,10 @@ current() ->
 unixtime() ->
     {M, S, _} = current(),
     M * 1000000 + S.
+
+long_unixtime() ->
+    {MegaSecs, Secs, MicroSecs} = current(),
+    (MegaSecs * 1000000000000 + Secs * 1000000 + MicroSecs) div 1000.
 
 datetime_to_timestamp(Date, Time) ->
     datetime_to_timestamp({Date, Time}).
