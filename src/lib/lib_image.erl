@@ -9,19 +9,12 @@
 -include("common.hrl").
 
 image(Id) ->
-    ets_cache:get_with_default(image_cache, Id,
-                               fun() ->
-                                       case db_image:image(Id) of
-                                           {ok, [Value]} ->
-                                               {expiration, Value, ?FOUR_HOUR_SECONDS};
-                                           {ok, []} ->
-                                               {expiration, [], ?FOUR_HOUR_SECONDS};
-                                           {error, Error} ->
-                                               ?WARNING_MSG("db error ~p~n", [Error]),
-                                               []
-                                       end
-                               end).
-
+    case db_image:image(Id) of
+        {ok, [Value]} ->
+            Value;
+        {ok, []} ->
+            []
+    end.    
 
 activity_images(ActivityId) ->
     case db_activity_image_relation:activity_image_relation(ActivityId) of

@@ -49,3 +49,4 @@ mnesia/
 /priv/fe_release
 
 .rebar
+dev.config

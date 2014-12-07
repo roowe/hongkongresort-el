@@ -2,6 +2,8 @@
 
 -export([user/1]).
 
+-export([incr_unread_count/1]).
+
 -include("db_user.hrl").
 -include("define_mysql.hrl").
 
@@ -35,3 +37,8 @@ r_list_insert_with_id(List) ->
 %% ----------------------------------------
 user(Id) ->
     db_mysql_base:select(?TABLE_CONF, {id, '=', Id}).
+
+incr_unread_count(Id) ->
+    db_mysql_base:update(?TABLE_CONF,
+                         [{unread_count, {unread_count,'+', 1}}], 
+                         {id,'=', Id}).

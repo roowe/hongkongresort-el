@@ -16,6 +16,7 @@
           verification_code,                    %% 
           unread_count = 0,                     %% 
           password_reset_code,                  %% 
-          salt                                  %% 
+          salt,                                 %% 
+          unassessed_count
          }).
 -endif.

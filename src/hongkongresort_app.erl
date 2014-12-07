@@ -28,6 +28,7 @@ start(_StartType, _StartArgs) ->
     load_all(),
     start_ets_cache_table(),
     {ok, SupPid} = hongkongresort_sup:start_link(),
+    register(hongkongresort, self()),
     {ok, SupPid}.
 
 stop(_State) ->

@@ -98,7 +98,10 @@ r_insert2(#record_mysql_info{
                 {Fields, Vals}
         end,    
     SQL = iolist_to_binary(erl_mysql:F(TableName, {FilterUndefIdFields, [FilterUndefIdVals]})),
-    case emysql:execute(DbPool, SQL) of
+    case catch emysql:execute(DbPool, SQL) of
+        {'EXIT', Reason} ->
+            ?DEBUG("db exit Reason ~p~n", [Reason]),
+            {error, Reason};
         Result when is_record(Result, ok_packet) ->
             if 
                 UndefId =:= undefined ->
@@ -107,6 +110,7 @@ r_insert2(#record_mysql_info{
                     {ok, Record}
             end;
         Result when is_record(Result, error_packet) ->
+            ?DEBUG("db error ~p~n", [Result]),
             {error, Result}
     end.
 
@@ -185,10 +189,14 @@ r_delete(#record_mysql_info{
 
 %% -------------------- emysql封装 --------------------
 run_affected(DbPool, SQL) ->
-    case emysql:execute(DbPool, SQL) of
+    case catch emysql:execute(DbPool, SQL) of
+        {'EXIT', Reason} ->
+            ?DEBUG("db exit Reason ~p~n", [Reason]),
+            {error, Reason};
         Result when is_record(Result, ok_packet) ->
             {ok, emysql_util:affected_rows(Result)};
         Result when is_record(Result, error_packet) ->
+            ?DEBUG("db error Reason ~p~n", [Result]),
             {error, Result}
     end.
 
@@ -203,12 +211,16 @@ db_run_rows(#record_mysql_info{
              end).
 
 run_rows(DbPool, SQL) ->
-    case emysql:execute(DbPool, SQL) of
+    case catch emysql:execute(DbPool, SQL) of
+        {'EXIT', Reason} ->
+            ?DEBUG("db exit Reason ~p~n", [Reason]),
+            {error, Reason};
         #result_packet{
            rows = Result
           } ->
             {ok, Result};
         Result when is_record(Result, error_packet) ->
+            ?DEBUG("db error Reason ~p~n", [Result]),
             {error, Result}
     end.
 

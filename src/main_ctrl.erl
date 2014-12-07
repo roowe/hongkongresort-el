@@ -1,4 +1,4 @@
--module(hongkongresort_ctrl).
+-module(main_ctrl).
 
 -export([start/0]).
 
@@ -6,19 +6,14 @@
 -define(RPC_TIMEOUT, infinity).
 
 commands_desc() ->
-    [{"stop", "停止hongkongresort进程"},
-     {"stop_app", "关闭hongkongresort application"},
-     {"start_app", "打开hongkongresort application"}].
+    [{"stop", "停止进程"},
+     {"stop_app", "关闭application"},
+     {"start_app", "打开application"},
+     {"started", "节点进程是否存在"}].
 opt_spec_list() ->
-    Node = case get(nodename) of
-               undefined ->
-                   throw(not_nodename);
-               V ->
-                   V
-           end,
     [
      {help, $h, "help", undefined, "显示帮助，然后退出"},
-     {node, undefined, "node", {atom, Node}, "管理节点"}
+     {nodename, undefined, "nodename", {atom, undefined}, "管理节点"}
     ].
 usage() ->
     getopt:usage(opt_spec_list(), "server_ctl", "<command> [<args>]", commands_desc()),
@@ -35,8 +30,7 @@ parse_arguments(CmdLine) ->
     end.
 
 start() ->
-    {ok, [[NodeStr|_]|_]} = init:get_argument(nodename),
-    put(nodename, list_to_atom(NodeStr)),
+    ok = io:setopts([{encoding, unicode}]),
     {Command, Opts, Args} =
         case parse_arguments(init:get_plain_arguments()) of
             {ok, Res}  -> 
@@ -44,28 +38,35 @@ start() ->
             no_command ->
                 usage()
         end,
-    Node = proplists:get_value(node, Opts),
-    net_adm:ping(Node),
-    timer:sleep(1000), %% wait auto find node
-    %% The reason we don't use a try/catch here is that rpc:call turns
-    %% thrown errors into normal return values
-    % io:format("Opts ~p~n", [Opts]),
-    case catch action(Command, Node, Args, Opts) of
-        ok ->
-            io:format("done.~n", []),
-            quit(0);
-        {ok, Info} ->
-            io:format("done (~p).~n", [Info]),
-            quit(0);        
-        Other ->
-            io:format("other result ~p~n", [Other]),
-            quit(2)
+    NodeName = proplists:get_value(nodename, Opts),
+    case net_adm:ping(NodeName) of
+        pong ->
+            %% timer:sleep(1000), %% wait auto find node
+            %% The reason we don't use a try/catch here is that rpc:call turns
+            %% thrown errors into normal return values
+            %% io:format("Opts ~p~n", [Opts]),
+            case catch action(Command, NodeName, Args, Opts) of
+                ok ->
+                    io:format("done.~n", []),
+                    quit(0);
+                {ok, Info} ->
+                    io:format("~p~n", [Info]),
+                    quit(0);        
+                Other ->
+                    io:format("other result ~p~n", [Other]),
+                    quit(1)
+            end;
+        pang ->
+            io:format("nodedown~n", []),
+            quit(0)
     end.
 
-action(stop, Node, _Args, _Opts) ->
-    io:format("Stopping and halting node ~p~n", [Node]),
-    call(Node, {?APP_NAME, stop_and_halt, []});
-action(Command, _Node, Args, Opts) ->
+action(stop, NodeName, _Args, _Opts) ->
+    io:format("Stopping and halting node ~p~n", [NodeName]),
+    call(NodeName, {main, stop_and_halt, []});
+action(started, NodeName, _Args, _Opts) ->
+    call(NodeName, {main, started, []});
+action(Command, _NodeName, Args, Opts) ->
     io:format("Command: ~p Args: ~p Opts: ~p~n", [Command, Args, Opts]),
     invalid_command.
 
