@@ -1,8 +1,8 @@
-REL_EBIN_DIR=/home/roowe/myproject/hongkongresort-el-ebin
+REL_EBIN_DIR="/Users/roowe/myproject/hongkongresort-el-ebin"
 DB_MATCH=p04
 ebin() {
     rebar clean
-    rebar com -j10
+    rebar com -j3
 
     for dir in `ls ./deps/`; do
         mkdir -p $REL_EBIN_DIR/deps/$dir/
@@ -14,7 +14,7 @@ ebin() {
     cp -rf ./ebin $REL_EBIN_DIR/
 
     mkdir -p $REL_EBIN_DIR/sh/
-    cp -rf ./sh/node_config_example $REL_EBIN_DIR/sh/
+    cp -rf ./sh/appctl $REL_EBIN_DIR/sh/
 
 }
 

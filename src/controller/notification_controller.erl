@@ -36,6 +36,7 @@ execute_post(?ACTION_MARK, [Id, IsRead, Token], _Req) ->
                 {ok, [#notification{
                          to = UserId
                         } = Notification]} ->
+                    lib_user:dec_unread_count(UserId),
                     db_notification:update(Notification#notification{
                                              is_read = IsRead
                                             }),

@@ -4,7 +4,7 @@
 -export([user_id_by_token/1]).
 -export([is_admin_user/1]).
 
--export([incr_unread_count/1]).
+-export([incr_unread_count/1, dec_unread_count/1]).
 
 -include("db_user.hrl").
 -include("db_login.hrl").
@@ -64,5 +64,7 @@ is_admin_user(Token) ->
     end.
 
 incr_unread_count(Id) ->
-    ?DEBUG("incr unread_count ~p~n", [Id]),
-    db_user:incr_unread_count(Id).
+    db_user:incr_unread_count(Id, '+').
+
+dec_unread_count(Id) ->
+    db_user:incr_unread_count(Id, '-').
