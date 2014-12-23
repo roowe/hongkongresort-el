@@ -17,6 +17,6 @@
           unread_count = 0,                     %% 
           password_reset_code,                  %% 
           salt,                                 %% 
-          unassessed_count
+          unassessed_count = 0                  %% 
          }).
 -endif.

@@ -5,7 +5,8 @@
 
 -export([frag_select/2, frag_select/3]).
 
--export([select/2, select/3, update/3, delete/2]).
+-export([select/2, select/3, select/4,
+         update/3, delete/2]).
 
 -export([db_run_rows/2]).
 
@@ -39,6 +40,14 @@ select(#record_mysql_info{
              fun(List) ->
                      [db_hook(OutDbHook, list_to_tuple([RecordName|Vals])) || Vals <- List]
              end).
+
+select(#record_mysql_info{
+          db_pool = DbPool,
+          table_name = TableName
+         }, Fields, WhereClause, Extras) ->
+    SQL = iolist_to_binary(erl_mysql:select(Fields, TableName, WhereClause, Extras)),
+    %% ?DEBUG("SQL ~ts~n", [SQL]),
+    run_rows(DbPool, SQL).
 
 frag_select(RecordMysqlInfo, WhereClause) -> 
     frag_select(RecordMysqlInfo, WhereClause, undefined).

@@ -3,6 +3,8 @@
 -export([user_activity_relation/2]).
 -export([delete_by_activity_id/1]).
 
+-export([sign_up_user_ids/1]).
+
 -include("db_user_activity_relation.hrl").
 -include("define_mysql.hrl").
 
@@ -39,3 +41,8 @@ delete_by_activity_id(ActivityId) ->
     db_mysql_base:delete(?TABLE_CONF, {activity_id, '=', ActivityId}).
 
 
+%% 操作成功後需要設定timer在begin_time的時刻向所有被選中的報名者(select `user_id` from `user_activity_relation` where `activity_id`=<from request data> and  `relation`=2) 發送以下消息（push via web socket and save it to db）: 
+sign_up_user_ids(ActivityId) ->
+    db_mysql_base:select(?TABLE_CONF, user_id, {{activity_id, '=', ActivityId}, 'and', {relation, '=', 2}}, undefined).
+
+    

@@ -3,12 +3,14 @@
 -export([page/4]).
 -export([find/1]).
 -export([delete_by_id/1]).
+-export([not_begin_accept_activity_info/0]).
 
 -include("db_activity.hrl").
 -include("define_mysql.hrl").
 -include("define_info_0.hrl").
 -include("define_info_3.hrl").
 -include("common.hrl").
+-include("define_activity.hrl").
 
 -define(TABLE_CONF, #record_mysql_info{
                        db_pool = hongkongresort,
@@ -69,3 +71,8 @@ find(Id) ->
 
 delete_by_id(Id) ->
     db_mysql_base:delete(?TABLE_CONF, {id, '=', Id}).
+
+not_begin_accept_activity_info() ->
+    Now = time_misc:long_unixtime(),
+    db_mysql_base:select(?TABLE_CONF, [id, begin_time], {{status, '=', ?ACTIVITY_STATUS_ACCEPTED}, 'and', {begin_time, '>', Now}}, undefined).
+

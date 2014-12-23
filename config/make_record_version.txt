@@ -4,7 +4,7 @@
  {comment,"8e3a2a"},
  {image,"5d8de4"},
  {login,"a34224"},
- {notification,"c8df95"},
+ {notification,"3f58d1"},
  {table_record_info,"6de3e8"},
- {user,"5b811a"},
+ {user,"22c099"},
  {user_activity_relation,"6539ac"}].

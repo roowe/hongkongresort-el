@@ -28,6 +28,9 @@ start(_StartType, _StartArgs) ->
     load_all(),
     start_ets_cache_table(),
     {ok, SupPid} = hongkongresort_sup:start_link(),
+
+    ok = hongkongresort_sup:start_child(mod_activity_noti),
+
     register(hongkongresort, self()),
     {ok, SupPid}.
 

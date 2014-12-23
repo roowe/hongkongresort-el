@@ -44,10 +44,16 @@ change_activity_status(ActivityId, Token, Status, UpdateTimeStampPos) ->
                                                           time_misc:long_unixtime())),
                             lib_notification:insert_and_push(notification(ActivityId, HostId, Status),
                                                              fun notification_pack/1),
+                            begin_noti(Activity, Status),
                             ?FAIL(?INFO_OK)
                     end
             end
     end.
+
+begin_noti(Activity, ?ACTIVITY_STATUS_ACCEPTED) ->    
+    mod_activity_noti:begin_noti(Activity#activity.id, Activity#activity.begin_time);
+begin_noti(_, _) -> 
+    ingore.
 
 notification(ActivityId, To, ?ACTIVITY_STATUS_ACCEPTED) ->
     #notification{
