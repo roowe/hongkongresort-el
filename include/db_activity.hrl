@@ -15,6 +15,7 @@
           num_applied = 0,                      %% 
           num_selected = 0,                     %% 
           last_accepted_time,                   %% 
-          last_rejected_time                    %% 
+          last_rejected_time,                   %% 
+          address = <<""/utf8>>                 %% 
          }).
 -endif.
