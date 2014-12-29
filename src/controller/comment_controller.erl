@@ -137,7 +137,7 @@ execute_post(?POST_ACTION_SUB_SUBMIT, [Token, ActivityId, Content,
                                               comment_id = CommentId,
                                               from = UserId,
                                               to = To,
-                                              content = notice_cotent(Activity, UserId)
+                                              content = sub_submit_notice_cotent(PredecessorId, UserId)
                                              },
                             lib_notification:insert_and_push(Notification, 
                                                              fun notification_pack/1),
@@ -252,6 +252,13 @@ notice_cotent(#activity{
       " 收到一條來到 "/utf8, 
       (erlang:integer_to_binary(FromId))/binary, 
       " 的評論"/utf8>>.
+
+sub_submit_notice_cotent(PredecessorId, FromId) ->
+    <<"你的提問 id<"/utf8,
+      (erlang:integer_to_binary(PredecessorId))/binary,
+      ">收到一條來自"/utf8,
+      (erlang:integer_to_binary(FromId))/binary,
+      "的回覆"/utf8>>.
 
 notification_pack(Notification) ->
     ?JSON([{id, Notification#notification.id},
