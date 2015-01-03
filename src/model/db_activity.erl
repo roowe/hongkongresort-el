@@ -5,6 +5,8 @@
 -export([delete_by_id/1]).
 -export([not_begin_accept_activity_info/0]).
 
+-export([incr_num_applied/1]).
+
 -include("db_activity.hrl").
 -include("define_mysql.hrl").
 -include("define_info_0.hrl").
@@ -76,3 +78,5 @@ not_begin_accept_activity_info() ->
     Now = time_misc:long_unixtime(),
     db_mysql_base:select(?TABLE_CONF, [id, begin_time], {{status, '=', ?ACTIVITY_STATUS_ACCEPTED}, 'and', {begin_time, '>', Now}}, undefined).
 
+incr_num_applied(Id) ->
+    {ok, _} = db_mysql_base:update(?TABLE_CONF, [{num_applied, {num_applied, '+', 1}}], {id, '=', Id}).

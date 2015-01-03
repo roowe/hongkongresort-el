@@ -25,7 +25,7 @@ delete(RecordOrList) ->
     db_mysql_base:r_delete(?TABLE_CONF, RecordOrList).
 
 insert(Record) ->
-    db_mysql_base:r_insert(?TABLE_CONF, Record).
+    {ok, _} = db_mysql_base:r_insert(?TABLE_CONF, Record).
 
 r_list_insert_withnot_id(List) ->
     db_mysql_base:r_list_insert_withnot_id(?TABLE_CONF, List).

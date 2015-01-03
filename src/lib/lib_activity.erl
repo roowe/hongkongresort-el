@@ -4,10 +4,13 @@
          admin_reject/2,
          admin_delete/2]).
 
+-export([join/2]).
+
 -include("common.hrl").
 -include("define_user.hrl").
 -include("define_activity.hrl").
 -include("db_notification.hrl").
+-include("db_user_activity_relation.hrl").
 
 admin_accept(ActivityId, Token) ->
     change_activity_status(ActivityId, Token, ?ACTIVITY_STATUS_ACCEPTED, #activity.last_accepted_time).
@@ -117,3 +120,55 @@ delete(ActivityId) ->
     db_user_activity_relation:delete_by_activity_id(ActivityId),    
     db_comment:delete_by_activity_id(ActivityId).
     
+join(UserId, ActivityId) ->
+    case db_activity:find(ActivityId) of
+        ?FAIL_REASON ->
+            ?FAIL_REASON;
+        {ok, #activity{
+                application_deadline = ApplicationDeadlineTimeStamp,
+                status = Status,
+                id = ActivityId,
+                host_id= HostId
+               }} ->
+            Now = time_misc:long_unixtime(),
+            if
+                Status =/= ?ACTIVITY_STATUS_ACCEPTED ->
+                    ?FAIL(?INFO_ACTIVITY_STATUS_NOT_ACCEPTED);
+                ApplicationDeadlineTimeStamp =< Now ->
+                    %% 活动已过期
+                    ?FAIL(?INFO_ACTIVITY_APPLICATION_DEADLINE_EXPIRED);
+                true ->
+                    case db_user_activity_relation:user_activity_relation(UserId, ActivityId) of
+                        {ok, [_]} ->
+                            ?FAIL(?INFO_ACTIVITY_JOINED);
+                        {ok, []} ->
+                            UserActivityRelation = #user_activity_relation{
+                                                      user_id = UserId,
+                                                      activity_id = ActivityId,
+                                                      relation = 1, %% 文档这么写的
+                                                      generated_time = Now
+                                                     },
+                            db_user_activity_relation:insert(UserActivityRelation),
+                            db_activity:incr_num_applied(ActivityId),
+
+                            Notification0 = #notification{
+                                              cmd = ?S2C_ACTIVITY_JOIN,
+                                              activity_id = ActivityId,
+                                              relation = 1,
+                                              content = <<"@<", (lib_user:user_name(UserId))/binary, "> 報名參加活動 id<"/utf8,
+                                                          (integer_to_binary(ActivityId))/binary,
+                                                          ">">>,
+                                              from = UserId,
+                                              to = HostId
+                                             },
+                            lib_notification:insert_and_push(Notification0, 
+                                                             fun (Notification) ->
+                                                                     ?JSON([{id, Notification#notification.id},
+                                                                            {activity_id, Notification#notification.activity_id},
+                                                                            {from, Notification#notification.from},
+                                                                            {content, Notification#notification.content}])
+                                                             end),
+                            ?FAIL(?INFO_OK)
+                    end
+            end
+    end.
