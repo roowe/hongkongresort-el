@@ -25,6 +25,7 @@
 
 -define(USER_RES_ID, (1 bsl 30)).
 -define(S2C_USER_RES_ID, ?USER_RES_ID+?S2C).
+-define(S2C_PARTICIPANTS_UPDATE, ?S2C_USER_RES_ID + 0).
 -define(S2C_ACTIVITY_JOIN, ?S2C_USER_RES_ID + 1).
 
 -endif.

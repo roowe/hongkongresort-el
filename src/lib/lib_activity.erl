@@ -4,7 +4,7 @@
          admin_reject/2,
          admin_delete/2]).
 
--export([join/2]).
+-export([join/2, participants_update/3]).
 
 -include("common.hrl").
 -include("define_user.hrl").
@@ -169,6 +169,56 @@ join(UserId, ActivityId) ->
                                                                             {content, Notification#notification.content}])
                                                              end),
                             ?FAIL(?INFO_OK)
+                    end
+            end
+    end.
+
+participants_update(UserId, ActivityId, Bundle) ->    
+    case db_activity:find(ActivityId) of
+        ?FAIL_REASON ->
+            ?FAIL_REASON;
+        {ok, #activity{
+                begin_time = BeginTime,
+                status = Status,
+                id = ActivityId,
+                host_id= HostId
+               }} ->
+            Now = time_misc:long_unixtime(),
+            if
+                Status =/= ?ACTIVITY_STATUS_ACCEPTED ->
+                    ?FAIL(?INFO_ACTIVITY_STATUS_NOT_ACCEPTED);
+                HostId =/= UserId ->
+                    ?FAIL(?INFO_ACTIVITY_NOT_HOST);
+                BeginTime =< Now ->
+                    %% 活动已开始
+                    ?FAIL(?INFO_ACTIVITY_BEGUN);
+                true ->
+                    AcceptedUserIds = db_user_activity_relation:accepted_user_ids(ActivityId),
+                    case Bundle -- AcceptedUserIds of
+                        [] ->
+                            db_user_activity_relation:update_select_relation(ActivityId, Bundle),
+                            db_activity:update_select_count(ActivityId, length(Bundle)),
+                            Notification0 = #notification{
+                                               cmd = ?S2C_PARTICIPANTS_UPDATE,
+                                               activity_id = ActivityId,
+                                               relation = 2,
+                                               content = <<"你已被確認參加活動 id<"/utf8,
+                                                           (integer_to_binary(ActivityId))/binary,
+                                                           ">">>,
+                                               from = HostId
+                                              },
+                            [lib_notification:insert_and_push(Notification0#notification{
+                                                                to = To
+                                                               }, 
+                                                             fun (Notification) ->
+                                                                     ?JSON([{id, Notification#notification.id},
+                                                                            {activity_id, Notification#notification.activity_id},
+                                                                            {from, Notification#notification.from},
+                                                                            {content, Notification#notification.content}])
+                                                             end) || To <- Bundle],
+                            ?FAIL(?INFO_OK);
+                        _ ->
+                           ?FAIL(?INFO_PARAMETER_ERROR)
                     end
             end
     end.

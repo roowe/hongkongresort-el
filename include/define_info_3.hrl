@@ -6,5 +6,7 @@
 -define(INFO_ACTIVITY_APPLICATION_DEADLINE_EXPIRED, 3003).       %%  活动已过期
 -define(INFO_ACTIVITY_STATUS_NOT_ACCEPTED, 3004).       %%  活动未通过审核
 -define(INFO_ACTIVITY_JOINED, 3005).       %%  已经参加该活动
+-define(INFO_ACTIVITY_NOT_HOST, 3006).       %%  该活动不是你发起，无法选人
+-define(INFO_ACTIVITY_BEGUN, 3007).       %%  活动已开始
 
 -endif.

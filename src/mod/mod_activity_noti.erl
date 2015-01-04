@@ -116,7 +116,7 @@ handle_info({begin_noti, ActivityId}, State) ->
     case db_user_activity_relation:sign_up_user_ids(ActivityId) of
         {ok, UserIds} ->
             [lib_notification:insert_and_push(notification(ActivityId, UserId),
-                                              fun notification_pack/1) || [UserId] <- UserIds],
+                                              fun notification_pack/1) || UserId <- UserIds],
             ok;
         {error, Error} ->
             ?DEBUG("DB Error ~p~n", [Error])

@@ -74,6 +74,7 @@ update(#record_mysql_info{
           table_name = TableName
          }, UpdateClause, WhereClause) ->
     SQL = iolist_to_binary(erl_mysql:update(TableName, UpdateClause, WhereClause)),
+    %% ?DEBUG("SQL ~ts~n", [SQL]),
     run_affected(DbPool, SQL).
 
 delete(#record_mysql_info{

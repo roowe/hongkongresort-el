@@ -159,6 +159,9 @@ parse_parameter(KeyValues, [{Parameter, DataType, OptionalOrRequired} | Paramete
 
 decoder(int, Value) ->
     erlang:binary_to_integer(Value);
+decoder(json, Value) ->
+    ?DEBUG("decode json ~w~n", [Value]),
+    jiffy:decode(Value);
 decoder(_, Value) ->
     Value.
 

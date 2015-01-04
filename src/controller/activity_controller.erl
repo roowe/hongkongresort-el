@@ -15,6 +15,7 @@
 -include("define_info_0.hrl").
 -define(ACTION_QUERY, [<<"query">>]).
 -define(ACTION_JOIN, [<<"join">>]).
+-define(ACTION_PARTICIPANTS_UPDATE, [<<"participants">>, <<"update">>]).
 
 -define(PARAM_PAGE, <<"page">>).
 -define(PARAM_NUM_ITEMS, <<"num_items">>).
@@ -22,7 +23,8 @@
 -define(PARAM_ORIENTATION, <<"orientation">>). 
 -define(PARAM_TOKEN, <<"token">>). 
 -define(PARAM_ACTIVITY_ID, <<"activity_id">>). 
-     
+-define(PARAM_BUNDLE, <<"bundle">>).
+
 init(Req, _Opts) ->
     GetParameter = [{?ACTION_QUERY, [{?PARAM_PAGE, int, required},
                                      {?PARAM_NUM_ITEMS, int, required},
@@ -33,7 +35,11 @@ init(Req, _Opts) ->
                     }],
     PostParameter = [{?ACTION_JOIN, [{?PARAM_TOKEN, binary, required},
                                      {?PARAM_ACTIVITY_ID, int, required}]
-                     }],
+                     },
+                     {?ACTION_PARTICIPANTS_UPDATE, [{?PARAM_TOKEN, binary, required},
+                                                    {?PARAM_ACTIVITY_ID, int, required},
+                                                    {?PARAM_BUNDLE, json, required}]}
+                    ],
     ControllerOpts = [{get_parameter, GetParameter}, {post_parameter, PostParameter}],
 	{controller_helper, Req, ControllerOpts}.
 
@@ -62,13 +68,23 @@ execute_get(?ACTION_QUERY, [Page, NumItems, OrderKey, Orientation, Token], _Req)
                     {json, Response}
             end
     end.
-
+%% /el/activity/join
+%% activity_id=4&token=0373d498650a3ad4e4cd561b7221e954
 execute_post(?ACTION_JOIN, [Token, ActivityId], _Req) -> 
     case lib_user:user_id_by_token(Token) of
         ?FAIL_REASON ->
             ?FAIL_REASON;
         {ok, UserId} ->
             lib_activity:join(UserId, ActivityId)
+    end;
+%% /el/activity/participants/update
+%% token=0373d498650a3ad4e4cd561b7221e954&&activity_id=1&&bundle="[11,12,13]"
+execute_post(?ACTION_PARTICIPANTS_UPDATE, [Token, ActivityId, Bundle], _Req) -> 
+    case lib_user:user_id_by_token(Token) of
+        ?FAIL_REASON ->
+            ?FAIL_REASON;
+        {ok, UserId} ->
+            lib_activity:participants_update(UserId, ActivityId, Bundle)
     end.
 
 allow_order_key(<<"id">>) ->
