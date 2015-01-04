@@ -13,12 +13,12 @@
 -include("db_user_activity_relation.hrl").
 
 admin_accept(ActivityId, Token) ->
-    change_activity_status(ActivityId, Token, ?ACTIVITY_STATUS_ACCEPTED, #activity.last_accepted_time).
+    change_activity_status(ActivityId, Token, ?ACTIVITY_STATUS_ACCEPTED, last_accepted_time).
 
 admin_reject(ActivityId, Token) ->
-    change_activity_status(ActivityId, Token, ?ACTIVITY_STATUS_REJECTED, #activity.last_rejected_time).
+    change_activity_status(ActivityId, Token, ?ACTIVITY_STATUS_REJECTED, last_rejected_time).
 
-change_activity_status(ActivityId, Token, Status, UpdateTimeStampPos) -> 
+change_activity_status(ActivityId, Token, Status, UpdateTimeStampField) -> 
     case lib_user:is_admin_user(Token) of
         ?FAIL_REASON ->
             ?FAIL_REASON;
@@ -40,11 +40,8 @@ change_activity_status(ActivityId, Token, Status, UpdateTimeStampPos) ->
                             %% 活动已过期
                             ?FAIL(?INFO_ACTIVITY_APPLICATION_DEADLINE_EXPIRED);
                         true ->                            
-                            db_activity:update(setelement(UpdateTimeStampPos, 
-                                                          Activity#activity{
-                                                            status = Status
-                                                           }, 
-                                                          time_misc:long_unixtime())),
+                            db_activity:update([{UpdateTimeStampField, time_misc:long_unixtime()}, 
+                                                {status, Status}], {id, '=', ActivityId}),
                             lib_notification:insert_and_push(notification(ActivityId, HostId, Status),
                                                              fun notification_pack/1),
                             begin_noti(Activity, Status),

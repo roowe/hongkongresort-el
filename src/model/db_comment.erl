@@ -7,6 +7,8 @@
 
 -export([fix_comment/0]).
 
+-export([incr_num_children/1]).
+
 -include("db_comment.hrl").
 -include("define_mysql.hrl").
 
@@ -86,3 +88,7 @@ fix_comment() ->
 
 delete_by_activity_id(ActivityId) ->
     db_mysql_base:delete(?TABLE_CONF, {activity_id, '=', ActivityId}).
+
+incr_num_children(Id) ->
+    {ok, _} = db_mysql_base:update(?TABLE_CONF, [{num_children, {num_children, '+', 1}}], {id, '=', Id}).
+

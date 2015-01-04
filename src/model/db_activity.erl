@@ -24,6 +24,7 @@
 
 %% --------------------通用代码--------------------
 -export([update/1, delete/1, insert/1, r_list_insert_withnot_id/1, r_list_insert_with_id/1]).
+-export([update/2]).
 
 update(Record)->
     {ok, _} = db_mysql_base:r_update(?TABLE_CONF, Record).
@@ -79,8 +80,11 @@ not_begin_accept_activity_info() ->
     db_mysql_base:select(?TABLE_CONF, [id, begin_time], {{status, '=', ?ACTIVITY_STATUS_ACCEPTED}, 'and', {begin_time, '>', Now}}, undefined).
 
 incr_num_applied(Id) ->
-    {ok, _} = db_mysql_base:update(?TABLE_CONF, [{num_applied, {num_applied, '+', 1}}], {id, '=', Id}).
+    update([{num_applied, {num_applied, '+', 1}}], {id, '=', Id}).
 
 update_select_count(Id, SelectCount) ->
-    {ok, _} = db_mysql_base:update(?TABLE_CONF, [{num_applied, {num_applied, '-', SelectCount}}, 
-                                                 {num_selected, {num_selected, '+', SelectCount}}], {id, '=', Id}).
+    update([{num_applied, {num_applied, '-', SelectCount}}, 
+            {num_selected, {num_selected, '+', SelectCount}}], {id, '=', Id}).
+
+update(UpdateClause, WhereClause) ->
+    {ok, _} = db_mysql_base:update(?TABLE_CONF, UpdateClause, WhereClause).

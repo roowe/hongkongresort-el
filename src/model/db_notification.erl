@@ -1,6 +1,7 @@
 -module(db_notification).
 
 -export([find/1]).
+-export([update_read/2]).
 
 -include("db_notification.hrl").
 -include("define_mysql.hrl").
@@ -35,4 +36,7 @@ r_list_insert_with_id(List) ->
 
 find(Id) ->
     db_mysql_base:select(?TABLE_CONF, {id, '=', Id}).
+
+update_read(Id, IsRead) ->
+    {ok, _} = db_mysql_base:update(?TABLE_CONF, [{is_read, IsRead}], {id, '=', Id}).
 

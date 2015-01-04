@@ -141,9 +141,7 @@ execute_post(?POST_ACTION_SUB_SUBMIT, [Token, ActivityId, Content,
                                              },
                             lib_notification:insert_and_push(Notification, 
                                                              fun notification_pack/1),
-                            db_comment:update(ParentComment#comment{
-                                                num_children = ParentComment#comment.num_children + 1
-                                               }),
+                            db_comment:incr_num_children(ParentComment#comment.id),
                             {fail, ?INFO_OK};
                         {error, _} ->                            
                             {fail, ?INFO_DB_ERROR}
