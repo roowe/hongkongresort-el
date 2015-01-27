@@ -50,3 +50,4 @@ mnesia/
 
 .rebar
 dev.config
+.data_tmp/

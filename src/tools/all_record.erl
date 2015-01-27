@@ -7,7 +7,7 @@
 -include("db_login.hrl").
 -include("db_image.hrl").
 -include("db_comment.hrl").
--include("db_base_error_list.hrl").
+-include("db_base_error_code.hrl").
 -include("db_activity_image_relation.hrl").
 -include("db_activity.hrl").
 -define(MATCH_SPEC(Record), #Record{_='_'}).
@@ -20,7 +20,7 @@ is_record(activity) ->
     true;
 is_record(activity_image_relation) ->
     true;
-is_record(base_error_list) ->
+is_record(base_error_code) ->
     true;
 is_record(comment) ->
     true;
@@ -44,8 +44,8 @@ get_fields(activity) ->
     record_info(fields, activity);
 get_fields(activity_image_relation) ->
     record_info(fields, activity_image_relation);
-get_fields(base_error_list) ->
-    record_info(fields, base_error_list);
+get_fields(base_error_code) ->
+    record_info(fields, base_error_code);
 get_fields(comment) ->
     record_info(fields, comment);
 get_fields(generate_conf) ->
@@ -68,8 +68,8 @@ match_info(activity) ->
     ?MATCH_SPEC(activity);
 match_info(activity_image_relation) ->
     ?MATCH_SPEC(activity_image_relation);
-match_info(base_error_list) ->
-    ?MATCH_SPEC(base_error_list);
+match_info(base_error_code) ->
+    ?MATCH_SPEC(base_error_code);
 match_info(comment) ->
     ?MATCH_SPEC(comment);
 match_info(generate_conf) ->
@@ -92,8 +92,8 @@ new(activity) ->
      io:format("~w~n", [lists:zip(record_info(fields, activity), tl(tuple_to_list(#activity{})))]);
 new(activity_image_relation) ->
      io:format("~w~n", [lists:zip(record_info(fields, activity_image_relation), tl(tuple_to_list(#activity_image_relation{})))]);
-new(base_error_list) ->
-     io:format("~w~n", [lists:zip(record_info(fields, base_error_list), tl(tuple_to_list(#base_error_list{})))]);
+new(base_error_code) ->
+     io:format("~w~n", [lists:zip(record_info(fields, base_error_code), tl(tuple_to_list(#base_error_code{})))]);
 new(comment) ->
      io:format("~w~n", [lists:zip(record_info(fields, comment), tl(tuple_to_list(#comment{})))]);
 new(generate_conf) ->

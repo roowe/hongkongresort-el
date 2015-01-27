@@ -4,8 +4,8 @@
 %% activity => activity
 -record(activity, {
           id,                                   %% 
-          title,                                %% 
-          content,                              %% 
+          title = <<""/utf8>>,                  %% 
+          content = <<""/utf8>>,                %% 
           created_time,                         %% 
           begin_time,                           %% 
           application_deadline,                 %% 

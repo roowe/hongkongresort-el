@@ -132,14 +132,49 @@ version_file_path(GenerateDir) ->
 write_version(GenerateDir, VersionList) ->
     write_term_file(version_file_path(GenerateDir), [VersionList]).
 
-check_new_version(GenerateDir, TableName, DataList) ->
-    Version = lists:sublist(sha256(DataList), 6),
+check_new_version(Options, TableName, FunNameList) ->
+    GenerateDir = proplists:get_value(generate_dir, Options),
+
+    CSVFile = csv_file(Options, TableName),
+
+    XlsxRoot = proplists:get_value(xlsx_root, Options),
+
+    XlsxFile = if                   
+                   TableName =:= base_error_code orelse
+                   TableName =:= base_mail ->
+                       %% CSVFile作为源文件 
+                       CSVFile;
+                   true ->
+                       filename:join(XlsxRoot, data_file:start(TableName) ++ ".xlsx")
+               end,
+    XlsxVersion = crypto_misc:md5_file(XlsxFile),
+    DataVersion = crypto_misc:md5(term_to_binary(FunNameList)),
+    Version = crypto_misc:md5(<<XlsxVersion/binary, DataVersion/binary>>),
+
+
+    RunXlsx2CsvF = fun() ->
+                           if 
+                               XlsxFile =:= CSVFile ->
+                                   ignore;
+                               true ->
+                                   Cmd = lists:concat([" xlsx2csv -i ", XlsxFile, " ", CSVFile, " -d tab "]),
+                                   cmd_print_ret(Cmd)
+                           end
+                   end,
     case ets:lookup(data_version, TableName) of
         [{_, Version}] ->
-            %% 如果文件不存在也需要再次生成
-            FileName = src_file_name(GenerateDir, module_name_from_table(TableName)),
-            not filelib:is_file(FileName);
+            case filelib:is_file(CSVFile) of
+                false ->
+                    %% CSV文件不存在，要生成csv
+                    RunXlsx2CsvF(),
+                    true;
+                true ->
+                    %% erl文件不存在，要生成
+                    FileName = src_file_name(GenerateDir, module_name_from_table(TableName)),
+                    not filelib:is_file(FileName)
+            end;
         _ ->
+            RunXlsx2CsvF(),
             ets:insert(data_version, {TableName, Version}),
             true
     end.
@@ -152,18 +187,19 @@ record_version_from_ets(GenerateDir) ->
     write_version(GenerateDir, lists:sort(ets:tab2list(data_version))),
     ets:delete(data_version).
 
-data_generate(GenerateDir, RecordName, FunConfList) ->
+data_generate(Options, RecordName, FunConfList) ->
     %% base_login_reward, base_login_reward, ["db_base_login_reward.hrl"]
     %% 如果RecordName, TableName, IncludeFiles遵循上面的规则，就只需要传一个变量，脏活下面帮你干
     IncludeFile = lists:concat(["db_", RecordName, ".hrl"]),
-    data_generate(GenerateDir, RecordName, RecordName, [IncludeFile], FunConfList).
+    data_generate(Options, RecordName, RecordName, [IncludeFile], FunConfList).
 
-data_generate(GenerateDir, RecordName, TableName, IncludeFiles, FunConfList) ->
-    ModuleName = module_name_from_table(TableName),
-    Data = get_data_from_db(TableName),         %% data for generate
-    case check_new_version(GenerateDir, TableName, {[FunConf#generate_conf.fun_name || FunConf <- FunConfList], 
-                                                     Data}) of
-        true ->            
+data_generate(Options, RecordName, TableName, IncludeFiles, FunConfList) ->
+    GenerateDir = proplists:get_value(generate_dir, Options),    
+    io:format("~p generating.~n", [TableName]),
+    case check_new_version(Options, TableName, [FunConf#generate_conf.fun_name || FunConf <- FunConfList]) of
+        true ->
+            ModuleName = module_name_from_table(TableName),
+            Data = get_data_from_db(Options, TableName),         %% data for generate
             data_generate_with_db_data(db_data_to_record(RecordName, Data), 
                                        ModuleName, RecordName,
                                        IncludeFiles, FunConfList, GenerateDir),
@@ -178,6 +214,7 @@ module_name_from_table(TableName) ->
     lists:concat(["data_", TableName]).
 
 data_generate_with_db_data(Data, ModuleName, RecordName, IncludeFiles, FunConfList, GenerateDir) ->
+    %% io:format("Data ~p~n", [Data]),
     %% head src
     CodingStr = "%% coding: utf-8\n", %% for erl_tidy 识别我们代码的编码，否则格式化的话会选择其他编码，导致乱码
     WarningStr = <<"%% Warning:本文件由data_generate自动生成，请不要手动修改\n"/utf8>>,
@@ -342,16 +379,18 @@ data_generate_with_db_data(Data, ModuleName, RecordName, IncludeFiles, FunConfLi
 src_file_name(GenerateDir, ModuleName) ->    
     filename:join(GenerateDir, ModuleName++".erl").
 
-get_data_from_db(TableName) ->
+get_data_from_db(Options, TableName) ->
+    CSVFile = csv_file(Options, TableName),
+    csv_parse:parse(CSVFile, all_record:get_fields(TableName)).
     %% 减少依赖，不用db_base:xxxx，直接拼SQL
-    case emysql:execute(db_base, lists:concat(["SELECT * FROM ", TableName])) of
-        #result_packet{
-           rows = Result
-          } ->
-            Result;
-        Result ->
-            throw({db_error, Result})
-    end.
+    %% case emysql:execute(db_base, lists:concat(["SELECT * FROM ", TableName])) of
+    %%     #result_packet{
+    %%        rows = Result
+    %%       } ->
+    %%         Result;
+    %%     Result ->
+    %%         throw({db_error, Result})
+    %% end.
     
 db_data_to_record(RecordName, DataList) ->
     [list_to_tuple([RecordName|BaseData]) || BaseData <- DataList].
@@ -365,18 +404,6 @@ list_dualmap(F, [E1 | R1], [E2 | R2]) ->
 orddict_cons(Key, Value, Dict) ->
     orddict:update(Key, fun (List) -> [Value | List] end, [Value], Dict).
 
-sha256(Data) ->
-    to_hex(crypto:hash(sha256, io_lib:format("~w", [Data]))).
-
-to_hex([]) ->
-    [];
-to_hex(Bin) when is_binary(Bin) ->
-    to_hex(binary_to_list(Bin));
-to_hex([H|T]) ->
-    [to_digit(H div 16), to_digit(H rem 16) | to_hex(T)].
-
-to_digit(N) when N < 10 -> $0 + N;
-to_digit(N) -> $a + N-10.
 
 write_term_file(FileName, Terms) ->
     file:write_file(FileName, [io_lib:format("~p.~n", [Term]) || Term <- Terms]).
@@ -423,3 +450,13 @@ red_print(Format, Args) ->
         {win32, _} -> 
             io:format(Format, Args)
     end.
+
+cmd_print_ret(Cmd) ->
+    os:cmd(Cmd).
+    %% io:format("Cmd: ~ts~n", [Cmd]),
+    %% Ret = os:cmd(Cmd),
+    %% io:format("Ret: ~p~n", [Ret]).
+
+csv_file(Options, TableName) ->
+    CsvRoot = proplists:get_value(csv_root, Options),
+    filename:join(CsvRoot, data_file:start(TableName) ++ ".csv").

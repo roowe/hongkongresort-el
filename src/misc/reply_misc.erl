@@ -9,7 +9,7 @@
 -export([ok_reply/3]).
 
 -include("common.hrl").
--include("db_base_error_list.hrl").
+-include("db_base_error_code.hrl").
 
 render(Module, Req) ->
     render(Module, [], Req).
@@ -44,10 +44,10 @@ content(json, {KVs}) ->
             undefined ->
                 {KVs};
             Ret ->
-                case data_base_error_list:get(Ret) of
+                case data_base_error_code:get(Ret) of
                     [] ->
                         {[{desc, <<"未更新的错误码"/utf8>>} |KVs]};
-                    #base_error_list{
+                    #base_error_code{
                        error_desc = Desc
                       } ->
                         {[{desc, Desc} |KVs]}

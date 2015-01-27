@@ -1,0 +1,5 @@
+#!/bin/bash
+. `dirname $0`/tools_env
+module=$1
+shift 1
+erl -pa $SERVER_EBIN_ROOT -noshell -name tool@127.0.0.1 -boot start_clean -s $module -s init stop -extra "$@"

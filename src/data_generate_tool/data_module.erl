@@ -3,10 +3,9 @@
 -export([start/0, %% may be for test only, data_module_ctl always transfers options
          start/1,
          start/2,
-         recompile_and_commit/0,
          tables/0]).
 
--export([import_from_csv/1]).
+%% -export([import_from_csv/1]).
 
 -export([
          default_db_host/0,
@@ -16,7 +15,8 @@
          default_db_base/0,
          default_generate_dir/0,
          default_jobs/0,
-         default_xlsx_root/0
+         default_xlsx_root/0,
+         default_csv_root/0
         ]).
 
 -export([fprof/0]).
@@ -27,24 +27,26 @@
 %% for apply(?MODULE, Fun, [])
 -compile(nowarn_unused_function).
 %% 不会报下面函数没有被用到的警告
+
 -export([
-         base_error_list/0
+         base_error_code/0
         ]).
 
 -include("define_data_generate.hrl").
 
 %% data header file
--include("db_base_error_list.hrl").
+-include("db_base_error_code.hrl").
 
 -define(DEFAULT_OPTIONS, [
-                          {db_host, "127.0.0.1"},
-                          {db_port, 3306},
-                          {db_user, "root"}, 
-                          {db_password, "root"},
-                          {db_base, "hongkongresort_base"},
-                          {generate_dir, "src/data/"},
-                          {jobs, 2},
-                          {xlsx_root, "/home/roowe/happytree/触动足球/peizhi"}
+                          %% {db_host, "127.0.0.1"},
+                          %% {db_port, 3306},
+                          %% {db_user, "root"}, 
+                          %% {db_password, "root"},
+                          %% {db_base, "p04_base"},
+                          {generate_dir, app_misc:root_dir() ++ "/src/data/"},
+                          {jobs, erlang:system_info(schedulers)},
+                          {xlsx_root, app_misc:root_dir() ++ "/common_svn/Excel/"},
+                          {csv_root, app_misc:root_dir() ++ "/.data_tmp/"}
                           ]).
 
 
@@ -56,12 +58,11 @@ fprof() ->
     fprof:analyse({dest, "data_module.txt"}).
 
 %% 优化：多进程生成
-mul_process(AllTables, Options) ->
-    GenerateDir = generate_dir(Options),
-    Jobs = jobs(Options),
+mul_process(AllTables, Options) ->    
+    Jobs = proplists:get_value(jobs, Options),
     GenerateFun =
         fun(TableName) ->
-                apply(data_generate, data_generate, [GenerateDir|?MODULE:TableName()])
+                apply(data_generate, data_generate, [Options|?MODULE:TableName()])
         end,
     PidMRefs = [spawn_monitor(fun () -> 
                                       [GenerateFun(Table) || Table <- Tables]
@@ -82,18 +83,17 @@ start(TableName, Options)
   when is_atom(TableName) ->
     start([TableName], Options);
 start(TableNameList, Options) ->
-    %% io:format("Options ~p~n", [Options]),
     print_options_info(Options),
-    GenerateDir = generate_dir(Options),
+    GenerateDir = proplists:get_value(generate_dir, Options),
     data_generate:load_version_to_ets(GenerateDir),
     AllowTableList = sets:to_list(
                        sets:intersection(
                          sets:from_list(TableNameList), 
                          sets:from_list(tables()))),
-
-    data_generate:ensure_deps_started(),
-    data_generate:ensure_pool_added(Options),    
-    import_from_csv(TableNameList, Options),   
+    %% data_generate:ensure_deps_started(),
+    %% data_generate:ensure_pool_added(Options),    
+    %% import_from_csv(TableNameList, Options),  
+    %% update_csv(TableNameList, Options),
     local_info_msg("AllowTableList ~p~n", [AllowTableList]),
     mul_process(AllowTableList, Options),
     case TableNameList -- AllowTableList of
@@ -106,65 +106,6 @@ start(TableNameList, Options) ->
     data_generate:record_version_from_ets(GenerateDir),
     %data_generate:rm_coding_comment(GenerateDir),
     ok.
-
-%% 手动更新不需要生成的配置表
-import_from_csv(TableNameList) ->
-    import_from_csv(TableNameList, [import_csv|?DEFAULT_OPTIONS]).
-
-import_from_csv(TableNameList, Options) ->
-    case lists:member(import_csv, Options) of
-        false ->
-            ingore;
-        true ->
-            local_info_msg("import from csv start ~n", []),    
-            User = proplists:get_value(db_user, Options),
-            Password = proplists:get_value(db_password, Options),
-            Host = proplists:get_value(db_host, Options),
-            Port = proplists:get_value(db_port, Options),
-            DataBase = proplists:get_value(db_base, Options),
-            XlsxRoot = proplists:get_value(xlsx_root, Options),
-            cmd_print_ret("cd " ++ XlsxRoot ++ " && svn up"),
-            ImportFromCsvFun = 
-                fun(Table) ->
-
-                        Cmd = "cd " ++ XlsxRoot ++ " && "++ 
-                            lists:concat([" xlsx2csv -i ", Table, ".xlsx /tmp/", Table, ".csv -d tab "]),
-                        cmd_print_ret(Cmd),
-                        LoadCmd = 
-                            lists:concat(["mysql --local-infile -h", Host, " -P", Port, " -u", User, " -p", Password, " -e \'USE ", DataBase, ";DELETE FROM ", Table, ";LOAD DATA LOCAL INFILE \"/tmp/", Table, ".csv\" INTO TABLE ", Table, " FIELDS OPTIONALLY ENCLOSED BY \"\\\"\" ESCAPED BY \"\\\\\"   IGNORE 1 LINES ", fields_for_load(Table), ";\'"]),
-                        cmd_print_ret(LoadCmd)
-
-                end,
-            [ImportFromCsvFun(Table) || Table <- TableNameList -- [base_error_list, base_mail]],
-            local_info_msg("import from csv end ~n", [])
-    end.    
-    
-
-
-%% (id, @in, @`desc`, reward);
-fields_for_load(Table) ->
-    RecordFields = all_record:get_fields(Table),
-    {ok, Fd} = file:open(lists:concat(["/tmp/", Table, ".csv"]), read),
-    {ok, Line} = file:read_line(Fd),
-    ok = file:close(Fd),
-    CsvFields = string:tokens(Line, "\t"),
-    FixFields = [begin
-                     RemoveNField = string:strip(Field, both, $\n),
-                     case lists:member(list_to_atom(RemoveNField), RecordFields) of
-                         true ->
-                             "`"++ RemoveNField ++"`";
-                         false ->
-                             "@`"++ RemoveNField ++"`"
-                     end
-                 end || Field <- CsvFields],
-    "(" ++ string:join(FixFields, ",") ++ ")".
-
-
-cmd_print_ret(Cmd) ->
-    os:cmd(Cmd).
-     %local_info_msg("Cmd: ~ts~n", [Cmd]),
-     %Ret = os:cmd(Cmd),
-     %local_info_msg("Ret: ~p~n", [Ret]).
 
 %% -------------------- for data_module_ctl --------------------
 
@@ -199,10 +140,13 @@ default_db_base() ->
     proplists:get_value(db_base, ?DEFAULT_OPTIONS).
 
 default_generate_dir() ->
-    generate_dir(?DEFAULT_OPTIONS).
+    proplists:get_value(generate_dir, ?DEFAULT_OPTIONS).
 
 default_xlsx_root() ->
     proplists:get_value(xlsx_root, ?DEFAULT_OPTIONS).
+
+default_csv_root() ->
+    proplists:get_value(csv_root, ?DEFAULT_OPTIONS).
 
 default_jobs() ->
     proplists:get_value(jobs, ?DEFAULT_OPTIONS).
@@ -210,58 +154,19 @@ default_jobs() ->
 
 
 %% -------------------- 处理选项 --------------------
-   
-generate_dir(Options) ->
-    %% "/home/roowe/happytree/server_p02/ebin/main.beam"
-    Root = server_root(),
-    case proplists:get_value(generate_dir, Options) of
-        "/" ++ _ = Path ->
-            Path;
-        RelativePath ->
-            filename:join(Root, RelativePath)
-    end.
-
-server_root() ->
-    app_misc:root_dir().
-
-remove_suffix_ebin(MainPath) ->
-    Detal = length(MainPath) - length("ebin/main.beam"),
-    lists:sublist(MainPath, Detal).
-
-jobs(Options) ->
-    proplists:get_value(jobs, Options).
 
 print_options_info(Options) ->
     io:format("--------------------选项信息--------------------~n", []),
-    io:format("数据库Host ~s~n", [proplists:get_value(db_host, Options)]),
-    io:format("数据库端口 ~p~n", [proplists:get_value(db_port, Options)]),
-    io:format("数据库用户名 ~s~n", [proplists:get_value(db_user, Options)]),
-    io:format("数据库密码 ~s~n", [proplists:get_value(db_password, Options)]),
-    io:format("数据库名字 ~s~n", [proplists:get_value(db_base, Options)]),
+    io:format("csv目录 ~s~n", [proplists:get_value(csv_root, Options)]),
+    io:format("xlsx目录 ~s~n", [proplists:get_value(xlsx_root, Options)]),
     io:format("数据的输出目录 ~s~n", [proplists:get_value(generate_dir, Options)]),
     io:format("生成数据的并发进程数 ~p~n", [proplists:get_value(jobs, Options)]),
     io:format("------------------------------------------------~n", []).
 %%--------------------每张表的生成函数--------------------
-
-base_error_list() ->
-    Fields = record_info(fields, base_error_list), 
-    [base_error_list, 
+base_error_code() ->
+    Fields = record_info(fields, base_error_code), 
+    [base_error_code, 
      [default_get_generate_conf(Fields, error_code)]].
-%% --------------------recompile and git commit--------------------
-recompile_and_commit() ->
-    Root = server_root(),
-    [_Node, IP] = string:tokens(atom_to_list(node()), "@"),
-    if
-        IP =:= "192.168.1.149" ->
-            %% 149 git version is old. not support --no-edit.
-            Cmd = "cd " ++ Root ++"; rebar compile; git add src/data/*erl src/data/*txt; git commit -m 'data_generate auto commit'; git pull ; git push origin master; ";
-        true ->
-            Cmd = "cd " ++ Root ++"; rebar compile; git add src/data/*erl src/data/*txt; git commit -m 'data_generate auto commit'; git pull --no-edit ; git push origin master; "
-    end,
-    local_info_msg("recompile_and_commit cmd ~p~n", [Cmd]),
-    Result = os:cmd(Cmd),
-    local_info_msg("recompile_and_commit ~p~n", [Result]),
-    ok.
 
 %%-------------------- 内部函数 --------------------
 

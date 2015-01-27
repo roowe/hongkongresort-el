@@ -4,6 +4,9 @@
 %% image => image
 -record(image, {
           id,                                   %% 
-          url                                   %% 
+          url,                                  %% 
+          meta_id,                              %% 
+          meta_type,                            %% 
+          generated_time = 0                    %% 
          }).
 -endif.
