@@ -8,5 +8,6 @@
 -define(INFO_ACTIVITY_JOINED, 3005).       %%  已经参加该活动
 -define(INFO_ACTIVITY_NOT_HOST, 3006).       %%  该活动不是你发起，无法选人
 -define(INFO_ACTIVITY_BEGUN, 3007).       %%  活动已开始
-
+-define(INFO_ACTIVITY_APPLIED_LIMIT, 3008).       %%  活动已经满人
+-define(INFO_ACTIVITY_SELECTED_LIMIT, 3009).       %%  选择的人数过多，请减少
 -endif.

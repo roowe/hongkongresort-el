@@ -14,6 +14,8 @@
 
 -include("define_info_0.hrl").
 -include("define_info_2.hrl").
+-include("define_activity.hrl").
+
 %% 使用宏的原因是因为Emacs解析<<>>和{}容易混了，所以用宏，同时，日后也方便修改
 -define(ACTION_QUERY, [<<"query">>]).
 -define(ACTION_SUB_QUERY, [<<"sub">>, <<"query">>]).
@@ -155,12 +157,15 @@ check_comment_submit(ActivityId, Token) ->
         ?FAIL_REASON ->
             ?FAIL_REASON;
         {ok, #activity{
-                 begin_time = BeginTimeStamp
-                } = Activity} ->
+                begin_time = BeginTimeStamp,
+                status = Status
+               } = Activity} ->
             Now = time_misc:long_unixtime(),
             if
                 Now >= BeginTimeStamp ->
-                    {fail, ?INFO_CANNT_COMMENT_ACTIVITY_HAS_BEGUN};
+                    ?FAIL(?INFO_CANNT_COMMENT_ACTIVITY_HAS_BEGUN);
+                Status =/= ?ACTIVITY_STATUS_ACCEPTED ->
+                    ?FAIL(?INFO_ACTIVITY_STATUS_NOT_ACCEPTED);
                 true ->
                     case lib_user:user_id_by_token(Token) of
                         {fail, Reason} ->

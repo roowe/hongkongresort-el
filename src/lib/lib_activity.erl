@@ -117,6 +117,8 @@ delete(ActivityId) ->
     db_user_activity_relation:delete_by_activity_id(ActivityId),    
     db_comment:delete_by_activity_id(ActivityId).
     
+-define(MAX_APPLIED, 500).
+
 join(UserId, ActivityId) ->
     case db_activity:find(ActivityId) of
         ?FAIL_REASON ->
@@ -125,7 +127,8 @@ join(UserId, ActivityId) ->
                 application_deadline = ApplicationDeadlineTimeStamp,
                 status = Status,
                 id = ActivityId,
-                host_id= HostId
+                host_id= HostId,
+                num_applied = NumApplied
                }} ->
             Now = time_misc:long_unixtime(),
             if
@@ -134,6 +137,8 @@ join(UserId, ActivityId) ->
                 ApplicationDeadlineTimeStamp =< Now ->
                     %% 活动已过期
                     ?FAIL(?INFO_ACTIVITY_APPLICATION_DEADLINE_EXPIRED);
+                NumApplied + 1 > ?MAX_APPLIED ->
+                    ?FAIL(?INFO_ACTIVITY_APPLIED_LIMIT);
                 true ->
                     case db_user_activity_relation:user_activity_relation(UserId, ActivityId) of
                         {ok, [_]} ->
@@ -170,6 +175,8 @@ join(UserId, ActivityId) ->
             end
     end.
 
+-define(MAX_SELECTED, 250).
+
 participants_update(UserId, ActivityId, Bundle) ->    
     case db_activity:find(ActivityId) of
         ?FAIL_REASON ->
@@ -178,7 +185,8 @@ participants_update(UserId, ActivityId, Bundle) ->
                 begin_time = BeginTime,
                 status = Status,
                 id = ActivityId,
-                host_id= HostId
+                host_id= HostId,
+                num_selected = NumSelected
                }} ->
             Now = time_misc:long_unixtime(),
             if
@@ -193,27 +201,32 @@ participants_update(UserId, ActivityId, Bundle) ->
                     AcceptedUserIds = db_user_activity_relation:accepted_user_ids(ActivityId),
                     case Bundle -- AcceptedUserIds of
                         [] ->
-                            db_user_activity_relation:update_select_relation(ActivityId, Bundle),
-                            db_activity:update_select_count(ActivityId, length(Bundle)),
-                            Notification0 = #notification{
-                                               cmd = ?S2C_PARTICIPANTS_UPDATE,
-                                               activity_id = ActivityId,
-                                               relation = 2,
-                                               content = <<"你已被確認參加活動 id<"/utf8,
-                                                           (integer_to_binary(ActivityId))/binary,
-                                                           ">">>,
-                                               from = HostId
-                                              },
-                            [lib_notification:insert_and_push(Notification0#notification{
-                                                                to = To
-                                                               }, 
-                                                             fun (Notification) ->
-                                                                     ?JSON([{id, Notification#notification.id},
-                                                                            {activity_id, Notification#notification.activity_id},
-                                                                            {from, Notification#notification.from},
-                                                                            {content, Notification#notification.content}])
-                                                             end) || To <- Bundle],
-                            ?FAIL(?INFO_OK);
+                            if 
+                                length(AcceptedUserIds) + NumSelected > ?MAX_SELECTED ->
+                                    ?FAIL(?INFO_ACTIVITY_SELECTED_LIMIT);
+                                true ->
+                                    db_user_activity_relation:update_select_relation(ActivityId, Bundle),
+                                    db_activity:update_select_count(ActivityId, length(Bundle)),
+                                    Notification0 = #notification{
+                                                       cmd = ?S2C_PARTICIPANTS_UPDATE,
+                                                       activity_id = ActivityId,
+                                                       relation = 2,
+                                                       content = <<"你已被確認參加活動 id<"/utf8,
+                                                                   (integer_to_binary(ActivityId))/binary,
+                                                                   ">">>,
+                                                       from = HostId
+                                                      },
+                                    [lib_notification:insert_and_push(Notification0#notification{
+                                                                        to = To
+                                                                       }, 
+                                                                      fun (Notification) ->
+                                                                              ?JSON([{id, Notification#notification.id},
+                                                                                     {activity_id, Notification#notification.activity_id},
+                                                                                     {from, Notification#notification.from},
+                                                                                     {content, Notification#notification.content}])
+                                                                      end) || To <- Bundle],
+                                    ?FAIL(?INFO_OK)
+                            end;
                         _ ->
                            ?FAIL(?INFO_PARAMETER_ERROR)
                     end
