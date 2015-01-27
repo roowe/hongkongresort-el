@@ -77,7 +77,7 @@ get_pack(?ACTION_SUB_QUERY, {Page, List}) ->
 %% /el/comment/submit
 %% token=0a029a1451b987fd3401f3820ec5139a&content=test嗯&activity_id=5
 execute_post(?POST_ACTION_SUBMIT, [Token, ActivityId, Content], _Req) ->
-    case check_comment_submit(ActivityId, Token) of
+    case check_comment_submit(ActivityId, Token, Content) of
         {fail, Reason} ->
             {fail, Reason};
         {ok, UserId, #activity{
@@ -112,7 +112,7 @@ execute_post(?POST_ACTION_SUBMIT, [Token, ActivityId, Content], _Req) ->
 %% token=0b8e47d16124c77b1a406048967757e4&content=test嗯&activity_id=5&to=10&predecessor_id=47&parent_id=47
 execute_post(?POST_ACTION_SUB_SUBMIT, [Token, ActivityId, Content, 
                                        To, PredecessorId, ParentId], _Req) ->
-    case check_comment_submit(ActivityId, Token) of
+    case check_comment_submit(ActivityId, Token, Content) of
         {fail, Reason} ->
             {fail, Reason};
         {ok, UserId, Activity} ->
@@ -152,28 +152,33 @@ execute_post(?POST_ACTION_SUB_SUBMIT, [Token, ActivityId, Content,
     end.
      
 
-check_comment_submit(ActivityId, Token) ->
-    case db_activity:find(ActivityId) of
-        ?FAIL_REASON ->
-            ?FAIL_REASON;
-        {ok, #activity{
-                begin_time = BeginTimeStamp,
-                status = Status
-               } = Activity} ->
-            Now = time_misc:long_unixtime(),
-            if
-                Now >= BeginTimeStamp ->
-                    ?FAIL(?INFO_CANNT_COMMENT_ACTIVITY_HAS_BEGUN);
-                Status =/= ?ACTIVITY_STATUS_ACCEPTED ->
-                    ?FAIL(?INFO_ACTIVITY_STATUS_NOT_ACCEPTED);
-                true ->
-                    case lib_user:user_id_by_token(Token) of
-                        {fail, Reason} ->
-                            {fail, Reason};
-                        {ok, UserId} ->
-                            {ok, UserId, Activity}
+check_comment_submit(ActivityId, Token, Content) ->
+    case re:run(Content, "^.{5,128}$", [unicode]) of
+        {match, _} ->
+            case db_activity:find(ActivityId) of
+                ?FAIL_REASON ->
+                    ?FAIL_REASON;
+                {ok, #activity{
+                        begin_time = BeginTimeStamp,
+                        status = Status
+                       } = Activity} ->
+                    Now = time_misc:long_unixtime(),
+                    if
+                        Now >= BeginTimeStamp ->
+                            ?FAIL(?INFO_CANNT_COMMENT_ACTIVITY_HAS_BEGUN);
+                        Status =/= ?ACTIVITY_STATUS_ACCEPTED ->
+                            ?FAIL(?INFO_ACTIVITY_STATUS_NOT_ACCEPTED);
+                        true ->
+                            case lib_user:user_id_by_token(Token) of
+                                {fail, Reason} ->
+                                    {fail, Reason};
+                                {ok, UserId} ->
+                                    {ok, UserId, Activity}
+                            end
                     end
-            end
+            end;
+        _ ->
+            ?FAIL(?INFO_COMMENT_CONTENT_INVALID)
     end.
 
 check_sub_comment_submit(ActivityId, Same, Same, To) ->
