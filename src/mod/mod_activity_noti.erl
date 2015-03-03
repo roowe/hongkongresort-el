@@ -156,15 +156,11 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 notification(ActivityId, UserId) ->
     #notification{
-       cmd = ?S2C_ACTIVITY_BEGIN,
+       cmd = ?S2C_ASSESSMENT_ACTIVITY_BEGIN,
        activity_id = ActivityId,
-       content = <<"你報名的活動 id = <"/utf8,
-                   (integer_to_binary(ActivityId))/binary,
-                   ">已經開始啦， 活動後記得回來評價其他參與者哦！"/utf8>>,
        to = UserId
       }.
 
 notification_pack(Notification) ->
     ?JSON([{id, Notification#notification.id},
-           {activity_id, Notification#notification.activity_id},
-           {content, Notification#notification.content}]).
+           {activity_id, Notification#notification.activity_id}]).

@@ -54,7 +54,13 @@ zh_hk2(#notification{
           from = FromId
          }) ->
     Format = "恭喜\"~ts\"報名參加你\"~ts\"的活動，赶快屁颠屁颠地去確認吧！",
-    io_lib:format(Format, [lib_user:user_name(FromId), short_activity_name(ActivityId)]).
+    io_lib:format(Format, [lib_user:user_name(FromId), short_activity_name(ActivityId)]);
+zh_hk2(#notification{
+          cmd = ?S2C_ASSESSMENT_ACTIVITY_BEGIN,
+          activity_id = ActivityId
+         }) ->
+    Format = "\"~ts\"結束後，別忘了給大家點(tu)贊(cao)",
+    io_lib:format(Format, [short_activity_name(ActivityId)]).
 
 short_activity_name(Id) ->
     case db_activity:find(Id) of
