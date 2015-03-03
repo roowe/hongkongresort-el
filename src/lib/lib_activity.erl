@@ -132,7 +132,7 @@ join(UserId, ActivityId) ->
             Now = time_misc:long_unixtime(),
             if
                 Status =/= ?ACTIVITY_STATUS_ACCEPTED ->
-                    ?FAIL(?INFO_ACTIVITY_STATUS_NOT_ACCEPTED);
+                    ?FAIL(?INFO_ACTIVITY_NOT_ACCEPTED);
                 ApplicationDeadlineTimeStamp =< Now ->
                     %% 活动已过期
                     ?FAIL(?INFO_ACTIVITY_APPLICATION_DEADLINE_EXPIRED);
@@ -189,12 +189,12 @@ participants_update(UserId, ActivityId, Bundle) ->
             Now = time_misc:long_unixtime(),
             if
                 Status =/= ?ACTIVITY_STATUS_ACCEPTED ->
-                    ?FAIL(?INFO_ACTIVITY_STATUS_NOT_ACCEPTED);
+                    ?FAIL(?INFO_ACTIVITY_NOT_ACCEPTED);
                 HostId =/= UserId ->
                     ?FAIL(?INFO_ACTIVITY_NOT_HOST);
                 BeginTime =< Now ->
                     %% 活动已开始
-                    ?FAIL(?INFO_ACTIVITY_BEGUN);
+                    ?FAIL(?INFO_ACTIVITY_HAS_BEGUN);
                 true ->
                     AcceptedUserIds = db_user_activity_relation:accepted_user_ids(ActivityId),
                     case Bundle -- AcceptedUserIds of

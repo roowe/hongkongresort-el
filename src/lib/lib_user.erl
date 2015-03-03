@@ -41,13 +41,13 @@ user_id_by_token(Token) ->
                 }]} ->
             {ok, UserId};
         _ ->
-            {fail, ?INFO_NOT_LOGIN}
+            {fail, ?INFO_NOT_LOGGED_IN}
     end.
 
 check_is_visitor(UserId) ->
     case user(UserId) of
         [] ->
-            ?FAIL(?INFO_NOT_FIND);
+            ?FAIL(?INFO_USER_NOT_FOUND);
         #user{
            group_id = ?USER_GROUP_VISITOR
           } ->
@@ -63,7 +63,7 @@ is_admin_user(Token) ->
         {ok, UserId} ->
             case lib_user:user(UserId) of
                 [] ->
-                    ?FAIL(?INFO_NOT_FIND);
+                    ?FAIL(?INFO_USER_NOT_FOUND);
                 #user{
                    group_id = ?USER_GROUP_ADMIN
                   } ->

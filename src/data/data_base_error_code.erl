@@ -34,7 +34,7 @@ get(5) ->
 		     error_desc = <<"数据库操作失败"/utf8>>};
 get(1001) ->
     #base_error_code{error_code = 1001,
-		     error_define = <<"INFO_NOT_LOGIN"/utf8>>,
+		     error_define = <<"INFO_NOT_LOGGED_IN"/utf8>>,
 		     error_desc = <<"用户未登陆"/utf8>>};
 get(1002) ->
     #base_error_code{error_code = 1002,
@@ -42,7 +42,7 @@ get(1002) ->
 		     error_desc = <<"你不是管理员用户"/utf8>>};
 get(1003) ->
     #base_error_code{error_code = 1003,
-		     error_define = <<"INFO_NOT_FIND"/utf8>>,
+		     error_define = <<"INFO_USER_NOT_FOUND"/utf8>>,
 		     error_desc = <<"用户没有找到"/utf8>>};
 get(1004) ->
     #base_error_code{error_code = 1004,
@@ -55,7 +55,7 @@ get(1005) ->
 get(2001) ->
     #base_error_code{error_code = 2001,
 		     error_define =
-			 <<"INFO_CANNT_COMMENT_ACTIVITY_HAS_BEGUN"/utf8>>,
+			 <<"INFO_CANNOT_COMMENT_ACTIVITY_HAS_BEGUN"/utf8>>,
 		     error_desc = <<"活动已经开始，无法评论"/utf8>>};
 get(2002) ->
     #base_error_code{error_code = 2002,
@@ -80,8 +80,7 @@ get(3003) ->
 		     error_desc = <<"活动已过期"/utf8>>};
 get(3004) ->
     #base_error_code{error_code = 3004,
-		     error_define =
-			 <<"INFO_ACTIVITY_STATUS_NOT_ACCEPTED"/utf8>>,
+		     error_define = <<"INFO_ACTIVITY_NOT_ACCEPTED"/utf8>>,
 		     error_desc = <<"活动未通过审核"/utf8>>};
 get(3005) ->
     #base_error_code{error_code = 3005,
@@ -93,7 +92,7 @@ get(3006) ->
 		     error_desc = <<"该活动不是你发起，无法选人"/utf8>>};
 get(3007) ->
     #base_error_code{error_code = 3007,
-		     error_define = <<"INFO_ACTIVITY_BEGUN"/utf8>>,
+		     error_define = <<"INFO_ACTIVITY_HAS_BEGUN"/utf8>>,
 		     error_desc = <<"活动已开始"/utf8>>};
 get(3008) ->
     #base_error_code{error_code = 3008,

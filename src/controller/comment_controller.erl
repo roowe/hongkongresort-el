@@ -163,9 +163,9 @@ check_comment_submit(ActivityId, Token, Content) ->
                     Now = time_misc:long_unixtime(),
                     if
                         Now >= BeginTimeStamp ->
-                            ?FAIL(?INFO_CANNT_COMMENT_ACTIVITY_HAS_BEGUN);
+                            ?FAIL(?INFO_CANNOT_COMMENT_ACTIVITY_HAS_BEGUN);
                         Status =/= ?ACTIVITY_STATUS_ACCEPTED ->
-                            ?FAIL(?INFO_ACTIVITY_STATUS_NOT_ACCEPTED);
+                            ?FAIL(?INFO_ACTIVITY_NOT_ACCEPTED);
                         true ->
                             case lib_user:user_id_by_token(Token) of
                                 {fail, Reason} ->
