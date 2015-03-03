@@ -2,7 +2,7 @@
 
 -export([user/1, user_name/1]).
 -export([user_id_by_token/1]).
--export([is_admin_user/1]).
+-export([is_admin_user/1, check_is_visitor/1]).
 
 -export([incr_unread_count/1, dec_unread_count/1]).
 
@@ -44,7 +44,17 @@ user_id_by_token(Token) ->
             {fail, ?INFO_NOT_LOGIN}
     end.
 
-
+check_is_visitor(UserId) ->
+    case user(UserId) of
+        [] ->
+            ?FAIL(?INFO_NOT_FIND);
+        #user{
+           group_id = ?USER_GROUP_VISITOR
+          } ->
+            ?FAIL(?INFO_VISITOR);
+        _ ->
+            ok
+    end.
 
 is_admin_user(Token) ->
     case lib_user:user_id_by_token(Token) of

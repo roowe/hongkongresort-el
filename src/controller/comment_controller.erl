@@ -171,7 +171,12 @@ check_comment_submit(ActivityId, Token, Content) ->
                                 {fail, Reason} ->
                                     {fail, Reason};
                                 {ok, UserId} ->
-                                    {ok, UserId, Activity}
+                                    case lib_user:check_is_visitor(UserId) of
+                                        ?FAIL_REASON ->
+                                            ?FAIL_REASON;
+                                        ok ->
+                                            {ok, UserId, Activity}
+                                    end
                             end
                     end
             end;

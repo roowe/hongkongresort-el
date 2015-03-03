@@ -75,7 +75,12 @@ execute_post(?ACTION_JOIN, [Token, ActivityId], _Req) ->
         ?FAIL_REASON ->
             ?FAIL_REASON;
         {ok, UserId} ->
-            lib_activity:join(UserId, ActivityId)
+            case lib_user:check_is_visitor(UserId) of
+                ?FAIL_REASON ->
+                    ?FAIL_REASON;
+                ok ->
+                    lib_activity:join(UserId, ActivityId)
+            end
     end;
 %% /el/activity/participants/update
 %% token=0373d498650a3ad4e4cd561b7221e954&&activity_id=1&&bundle="[11,12,13]"

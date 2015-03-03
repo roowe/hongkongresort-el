@@ -44,6 +44,14 @@ get(1003) ->
     #base_error_code{error_code = 1003,
 		     error_define = <<"INFO_NOT_FIND"/utf8>>,
 		     error_desc = <<"用户没有找到"/utf8>>};
+get(1004) ->
+    #base_error_code{error_code = 1004,
+		     error_define = <<"INFO_PSW_ERR"/utf8>>,
+		     error_desc = <<"密碼錯誤"/utf8>>};
+get(1005) ->
+    #base_error_code{error_code = 1005,
+		     error_define = <<"INFO_VISITOR"/utf8>>,
+		     error_desc = <<"游客无法进行此操作"/utf8>>};
 get(2001) ->
     #base_error_code{error_code = 2001,
 		     error_define =
