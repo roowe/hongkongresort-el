@@ -98,8 +98,7 @@ execute_post(?POST_ACTION_SUBMIT, [Token, ActivityId, Content], _Req) ->
                                       activity_id = ActivityId,
                                       comment_id = CommentId,
                                       from = UserId,
-                                      to = HostId,
-                                      content = notice_cotent(Activity, UserId)
+                                      to = HostId
                                      },
                     lib_notification:insert_and_push(Notification,
                                                      fun notification_pack/1),
@@ -138,8 +137,7 @@ execute_post(?POST_ACTION_SUB_SUBMIT, [Token, ActivityId, Content,
                                               activity_id = ActivityId,
                                               comment_id = CommentId,
                                               from = UserId,
-                                              to = To,
-                                              content = sub_submit_notice_cotent(PredecessorId, UserId)
+                                              to = To
                                              },
                             lib_notification:insert_and_push(Notification, 
                                                              fun notification_pack/1),
@@ -252,24 +250,22 @@ terminate(_Reason, _Req, _State) ->
 	ok.
 
 %% "你的活動 id <activity_id> 收到一條來到 <from> 的評論”.
-notice_cotent(#activity{
-                 id = ActivityId
-                }, FromId) ->
-    <<"你的活動 id "/utf8, 
-      (erlang:integer_to_binary(ActivityId))/binary, 
-      " 收到一條來到 "/utf8, 
-      (erlang:integer_to_binary(FromId))/binary, 
-      " 的評論"/utf8>>.
+%% notice_cotent(#activity{
+%%                  id = ActivityId
+%%                 }, FromId) ->
+%%     <<"你的活動 id "/utf8, 
+%%       (erlang:integer_to_binary(ActivityId))/binary, 
+%%       " 收到一條來到 "/utf8, 
+%%       (erlang:integer_to_binary(FromId))/binary, 
+%%       " 的評論"/utf8>>.
 
-sub_submit_notice_cotent(PredecessorId, FromId) ->
-    <<"你的提問 id<"/utf8,
-      (erlang:integer_to_binary(PredecessorId))/binary,
-      ">收到一條來自"/utf8,
-      (erlang:integer_to_binary(FromId))/binary,
-      "的回覆"/utf8>>.
+%% sub_submit_notice_cotent(PredecessorId, FromId) ->
+%%     <<"你的提問 id<"/utf8,
+%%       (erlang:integer_to_binary(PredecessorId))/binary,
+%%       ">收到一條來自"/utf8,
+%%       (erlang:integer_to_binary(FromId))/binary,
+%%       "的回覆"/utf8>>.
 
 notification_pack(Notification) ->
     ?JSON([{id, Notification#notification.id},
-           {activity_id, Notification#notification.activity_id},
-           {from, Notification#notification.from},
-           {content, Notification#notification.content}]).
+           {activity_id, Notification#notification.activity_id}]).
