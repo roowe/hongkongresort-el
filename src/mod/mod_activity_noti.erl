@@ -90,12 +90,7 @@ handle_call(_Request, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_cast(init_add_not_begin_accept_activity, State) ->
-    case db_activity:not_begin_accept_activity_info() of
-        {ok, ActivityInfos} ->
-            [begin_noti(ActivityId, BeginTimestamp) || [ActivityId, BeginTimestamp] <- ActivityInfos];
-        {error, Error} ->
-            ?WARNING_MSG("DB Error ~p~n", [Error])
-    end,
+    [begin_noti(ActivityId, BeginTimestamp) || [ActivityId, BeginTimestamp] <- db_activity:not_begin_accept_activity_info()],
     {noreply, State};
 handle_cast(_Msg, State) ->
     ?WARNING_MSG("unknow cast: ~p~n", [_Msg]),

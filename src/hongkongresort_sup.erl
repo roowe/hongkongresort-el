@@ -10,6 +10,8 @@
          start_supervisor_child/3,
          start_restartable_child/1, start_restartable_child/2]).
 
+-export([start_poolboy/1]).
+
 %% Supervisor callbacks
 -export([init/1]).
 
@@ -67,6 +69,9 @@ start_restartable_child(Mod, Args) ->
                           [Name, {Mod, start_link, Args}]},
                    transient, infinity, supervisor, [restartable_sup]})).
 
+start_poolboy(ChildSpec) ->
+    child_reply(supervisor:start_child(?SERVER, ChildSpec)).
+    
 child_reply({ok, _}) -> 
     ok;
 child_reply(X) ->

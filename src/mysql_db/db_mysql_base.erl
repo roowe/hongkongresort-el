@@ -1,6 +1,3 @@
-%% 约定：
-%% 1、第一个字段是键值，作为key存在，跟mnesia的规则一样，简化底层代码，提高运行效率，通过约束减少不必要的运算
-
 -module(db_mysql_base).
 
 -export([frag_select/2, frag_select/3]).
@@ -21,7 +18,10 @@
 
 -export([run_affected/2, run_rows/2, run_rows/3]).
 
--include_lib("emysql/include/emysql.hrl").
+-export([as_record/3, as_record/4]).
+
+-include("mysql/include/mysql.hrl").
+
 -include("define_mysql.hrl").
 -include("common.hrl").
 
@@ -32,13 +32,14 @@ select(#record_mysql_info{
           db_pool = DbPool,
           table_name = TableName,
           record_name = RecordName,
-          out_db_hook = OutDbHook
+          out_db_hook = OutDbHook,
+          fields = Fields
          }, WhereClause, Extras) ->
     SQL = iolist_to_binary(erl_mysql:select('*', TableName, WhereClause, Extras)),
     %% ?DEBUG("SQL ~ts~n", [SQL]),
     run_rows(DbPool, SQL,
-             fun(List) ->
-                     [db_hook(OutDbHook, list_to_tuple([RecordName|Vals])) || Vals <- List]
+             fun(Result) ->
+                     as_record(Result, RecordName, Fields, OutDbHook)
              end).
 
 select(#record_mysql_info{
@@ -108,20 +109,22 @@ r_insert2(#record_mysql_info{
                 {Fields, Vals}
         end,    
     SQL = iolist_to_binary(erl_mysql:F(TableName, {FilterUndefIdFields, [FilterUndefIdVals]})),
-    case catch emysql:execute(DbPool, SQL) of
-        {'EXIT', Reason} ->
-            ?DEBUG("db exit Reason ~p~n", [Reason]),
-            {error, Reason};
-        Result when is_record(Result, ok_packet) ->
+    case mysql_pool:query(DbPool, SQL) of
+        {ok, [#mysql_ok{
+                 insert_id = InsertId
+                }]} ->
             if 
                 UndefId =:= undefined ->
-                    {ok, setelement(2, Record, emysql_util:insert_id(Result))};
+                    {ok, setelement(2, Record, InsertId)};
                 true ->
                     {ok, Record}
             end;
-        Result when is_record(Result, error_packet) ->
+        {ok, [Result]} ->
             ?DEBUG("db error ~p~n", [Result]),
-            {error, Result}
+            {error, Result};
+        Reason ->
+            ?DEBUG("db exit Reason ~p~n", [Reason]),
+            {error, Reason}
     end.
 
 
@@ -199,39 +202,41 @@ r_delete(#record_mysql_info{
 
 %% -------------------- emysql封装 --------------------
 run_affected(DbPool, SQL) ->
-    case catch emysql:execute(DbPool, SQL) of
-        {'EXIT', Reason} ->
-            ?DEBUG("db exit Reason ~p~n", [Reason]),
-            {error, Reason};
-        Result when is_record(Result, ok_packet) ->
-            {ok, emysql_util:affected_rows(Result)};
-        Result when is_record(Result, error_packet) ->
+    case mysql_pool:query(DbPool, SQL) of
+        {ok, [#mysql_ok{
+                 affected_rows = AffectedRows
+                }]}->
+            {ok, AffectedRows};
+        {ok, Result} ->
             ?DEBUG("db error Reason ~p~n", [Result]),
-            {error, Result}
+            {error, Result};
+        Reason ->
+            ?DEBUG("db exit Reason ~p~n", [Reason]),
+            {error, Reason}
     end.
 
 db_run_rows(#record_mysql_info{
                db_pool = DbPool,
                record_name = RecordName,
-               out_db_hook = OutDbHook
+               out_db_hook = OutDbHook,
+               fields = Fields
               }, SQL) ->
     run_rows(DbPool, SQL,
-             fun(List) ->
-                     [db_hook(OutDbHook, list_to_tuple([RecordName|Vals])) || Vals <- List]
+             fun(Result) ->
+                     as_record(Result, RecordName, Fields, OutDbHook)
              end).
 
 run_rows(DbPool, SQL) ->
-    case catch emysql:execute(DbPool, SQL) of
-        {'EXIT', Reason} ->
-            ?DEBUG("db exit Reason ~p~n", [Reason]),
-            {error, Reason};
-        #result_packet{
-           rows = Result
-          } ->
+    case mysql_pool:query(DbPool, SQL) of
+        {ok, [#mysql_resultset{
+                }=Result]} ->
             {ok, Result};
-        Result when is_record(Result, error_packet) ->
+        {ok, [Result]}->
             ?DEBUG("db error Reason ~p~n", [Result]),
-            {error, Result}
+            {error, Result};
+        Reason ->
+            ?DEBUG("db exit Reason ~p~n", [Reason]),
+            {error, Reason}
     end.
 
 run_rows(DbPool, SQL, ResultFun) ->
@@ -255,3 +260,36 @@ db_hook(undefined, Record) ->
     Record;
 db_hook(Fun, Record) ->
     Fun(Record).
+
+as_record(#mysql_resultset{
+             cols = Columns,
+             rows = Rows
+            }, 
+          RecordName, Fields, Fun) ->
+    S = lists:seq(1, length(Columns)),
+    P = lists:zip([ binary_to_atom(Col, utf8) || Col <- Columns ], S),
+    F = fun(FieldName) ->
+                case proplists:lookup(FieldName, P) of
+                    none ->
+                        fun(_) -> undefined end;
+                    {FieldName, Pos} ->
+                        fun(Row) -> element(Pos, Row) end
+                end
+        end,
+    Fs = [ F(FieldName) || FieldName <- Fields ],
+    F1 = fun(Row0) ->
+                 Row = list_to_tuple(Row0),
+                 RecordData = [ Fx(Row) || Fx <- Fs ],
+                 Record = list_to_tuple([RecordName|RecordData]),
+                 if
+                     Fun =:= undefined ->
+                         Record;
+                     true ->
+                         Fun(Record)
+                 end
+         end,
+    [ F1(Row) || Row <- Rows ].
+
+as_record(Result, RecordName, Fields) ->
+    as_record(Result, RecordName, Fields, fun(A) -> A end).
+

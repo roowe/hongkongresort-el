@@ -24,13 +24,11 @@ start(_StartType, _StartArgs) ->
                                              end},
                                  {middlewares, [cowboy_router, cowboy_handler]}
                                 ]),
-    mysql_misc:init(),
     load_all(),
     start_ets_cache_table(),
     {ok, SupPid} = hongkongresort_sup:start_link(),
-
+    mysql_pool:init(),
     ok = hongkongresort_sup:start_child(mod_activity_noti),
-
     register(hongkongresort, self()),
     {ok, SupPid}.
 
