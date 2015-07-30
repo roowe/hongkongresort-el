@@ -149,26 +149,33 @@ join(UserId, ActivityId) ->
                                                       relation = 1, %% 文档这么写的
                                                       generated_time = Now
                                                      },
-                            db_user_activity_relation:insert(UserActivityRelation),
-                            db_activity:incr_num_applied(ActivityId),
-
-                            Notification0 = #notification{
-                                              cmd = ?S2C_ACTIVITY_JOIN,
-                                              activity_id = ActivityId,
-                                              relation = 1,
-                                              %% content = <<"@<", (lib_user:user_name(UserId))/binary, "> 報名參加活動 id<"/utf8,
-                                              %%             (integer_to_binary(ActivityId))/binary,
-                                              %%             ">">>,
-                                              from = UserId,
-                                              to = HostId
-                                             },
-                            lib_notification:insert_and_push(Notification0, 
-                                                             fun (Notification) ->
-                                                                     ?JSON([{id, Notification#notification.id},
-                                                                            {activity_id, Notification#notification.activity_id},
-                                                                            {from, Notification#notification.from}])
-                                                             end),
-                            ?FAIL(?INFO_OK)
+                            case mysql_pool:transaction(hongkongresort, 
+                                                        fun(Db) ->
+                                                                db_user_activity_relation:insert(Db, UserActivityRelation),
+                                                                db_activity:incr_num_applied(Db, ActivityId),
+                                                                ok
+                                                        end) of
+                                {atomic, ok}  ->
+                                    Notification0 = #notification{
+                                                       cmd = ?S2C_ACTIVITY_JOIN,
+                                                       activity_id = ActivityId,
+                                                       relation = 1,
+                                                       %% content = <<"@<", (lib_user:user_name(UserId))/binary, "> 報名參加活動 id<"/utf8,
+                                                       %%             (integer_to_binary(ActivityId))/binary,
+                                                       %%             ">">>,
+                                                       from = UserId,
+                                                       to = HostId
+                                                      },
+                                    lib_notification:insert_and_push(Notification0, 
+                                                                     fun (Notification) ->
+                                                                             ?JSON([{id, Notification#notification.id},
+                                                                                    {activity_id, Notification#notification.activity_id},
+                                                                                    {from, Notification#notification.from}])
+                                                                     end),
+                                    ?FAIL(?INFO_OK);
+                                {aborted, _} ->
+                                    ?FAIL(?INFO_DB_ERROR)
+                            end
                     end
             end
     end.

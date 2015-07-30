@@ -5,7 +5,7 @@
 -export([delete_by_id/1]).
 -export([not_begin_accept_activity_info/0]).
 
--export([incr_num_applied/1, update_select_count/2]).
+-export([incr_num_applied/2, update_select_count/3]).
 
 -include("db_activity.hrl").
 -include("define_mysql.hrl").
@@ -63,12 +63,17 @@ not_begin_accept_activity_info() ->
             []
     end.
 
-incr_num_applied(Id) ->
-    update([{num_applied, {num_applied, '+', 1}}], {id, '=', Id}).
+incr_num_applied(Db, Id) ->
+    update(Db, [{num_applied, {num_applied, '+', 1}}], {id, '=', Id}).
 
-update_select_count(Id, SelectCount) ->
-    update([{num_applied, {num_applied, '-', SelectCount}}, 
+update_select_count(Db, Id, SelectCount) ->
+    update(Db, [{num_applied, {num_applied, '-', SelectCount}}, 
             {num_selected, {num_selected, '+', SelectCount}}], {id, '=', Id}).
 
 update(UpdateClause, WhereClause) ->
     {ok, _} = db_mysql_base:update(?TABLE_CONF, UpdateClause, WhereClause).
+
+update(Db, UpdateClause, WhereClause) ->
+    {ok, _} = db_mysql_base:update(?TABLE_CONF#record_mysql_info{
+                                      db_pool = Db
+                                     }, UpdateClause, WhereClause).

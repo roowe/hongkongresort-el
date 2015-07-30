@@ -20,7 +20,6 @@
 
 -export([as_record/3, as_record/4]).
 
--include("mysql/include/mysql.hrl").
 
 -include("define_mysql.hrl").
 -include("common.hrl").

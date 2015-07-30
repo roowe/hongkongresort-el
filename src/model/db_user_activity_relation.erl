@@ -18,7 +18,7 @@
                       }).
 
 %% --------------------通用代码--------------------
--export([update/1, delete/1, insert/1, r_list_insert_withnot_id/1, r_list_insert_with_id/1]).
+-export([update/1, delete/1, insert/2, r_list_insert_withnot_id/1, r_list_insert_with_id/1]).
 
 update(Record)->
     db_mysql_base:r_update(?TABLE_CONF, Record).
@@ -26,8 +26,10 @@ update(Record)->
 delete(RecordOrList) ->
     db_mysql_base:r_delete(?TABLE_CONF, RecordOrList).
 
-insert(Record) ->
-    {ok, _} = db_mysql_base:r_insert(?TABLE_CONF, Record).
+insert(Db, Record) ->
+    {ok, _} = db_mysql_base:r_insert(?TABLE_CONF#record_mysql_info{
+                                        db_pool = Db
+                                       }, Record).
 
 r_list_insert_withnot_id(List) ->
     db_mysql_base:r_list_insert_withnot_id(?TABLE_CONF, List).
