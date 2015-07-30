@@ -5,7 +5,7 @@
 
 -export([sign_up_user_ids/1, accepted_user_ids/1]).
 
--export([update_select_relation/2]).
+-export([update_select_relation/3]).
 
 -include("db_user_activity_relation.hrl").
 -include("define_mysql.hrl").
@@ -52,12 +52,16 @@ accepted_user_ids(ActivityId) ->
     select_by_relation(ActivityId, 1).
 
 select_by_relation(ActivityId, Relation) ->
-    {ok, List} = db_mysql_base:select(?TABLE_CONF, user_id, {{activity_id, '=', ActivityId}, 'and', {relation, '=', Relation}}, undefined),
+    {ok, #mysql_resultset{
+            rows = List
+           }} = db_mysql_base:select(?TABLE_CONF, user_id, {{activity_id, '=', ActivityId}, 'and', {relation, '=', Relation}}, undefined),
     lists:append(List).
     
 %% UPDATE  `user_activity_relation` SET  relation=2 WHERE activity_id=1 AND user_id in (10, 11)
-update_select_relation(ActivityId, UserIds) ->
+update_select_relation(Db, ActivityId, UserIds) ->
     Now = time_misc:long_unixtime(),
-    {ok, _} = db_mysql_base:update(?TABLE_CONF, [{relation, 2}, {last_selected_time, Now}], {{activity_id, '=', ActivityId}, 'and', {user_id, in, UserIds}}).
+    {ok, _} = db_mysql_base:update(?TABLE_CONF#record_mysql_info{
+                                      db_pool = Db
+                                     }, [{relation, 2}, {last_selected_time, Now}], {{activity_id, '=', ActivityId}, 'and', {user_id, in, UserIds}}).
 
 

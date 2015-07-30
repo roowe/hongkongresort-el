@@ -210,23 +210,31 @@ participants_update(UserId, ActivityId, Bundle) ->
                                 length(AcceptedUserIds) + NumSelected > ?MAX_SELECTED ->
                                     ?FAIL(?INFO_ACTIVITY_SELECTED_LIMIT);
                                 true ->
-                                    db_user_activity_relation:update_select_relation(ActivityId, Bundle),
-                                    db_activity:update_select_count(ActivityId, length(Bundle)),
-                                    Notification0 = #notification{
-                                                       cmd = ?S2C_PARTICIPANTS_UPDATE,
-                                                       activity_id = ActivityId,
-                                                       relation = 2,
-                                                       from = HostId
-                                                      },
-                                    [lib_notification:insert_and_push(Notification0#notification{
-                                                                        to = To
-                                                                       }, 
-                                                                      fun (Notification) ->
-                                                                              ?JSON([{id, Notification#notification.id},
-                                                                                     {activity_id, Notification#notification.activity_id},
-                                                                                     {from, Notification#notification.from}])
-                                                                      end) || To <- Bundle],
-                                    ?FAIL(?INFO_OK)
+                                    case mysql_pool:transaction(hongkongresort, 
+                                                                fun(Db) ->
+                                                                        db_user_activity_relation:update_select_relation(Db, ActivityId, Bundle),
+                                                                        db_activity:update_select_count(Db, ActivityId, length(Bundle)),
+                                                                        ok
+                                                                end) of
+                                        {atomic, ok}  ->
+                                            Notification0 = #notification{
+                                                               cmd = ?S2C_PARTICIPANTS_UPDATE,
+                                                               activity_id = ActivityId,
+                                                               relation = 2,
+                                                               from = HostId
+                                                              },
+                                            [lib_notification:insert_and_push(Notification0#notification{
+                                                                                to = To
+                                                                               }, 
+                                                                              fun (Notification) ->
+                                                                                      ?JSON([{id, Notification#notification.id},
+                                                                                             {activity_id, Notification#notification.activity_id},
+                                                                                             {from, Notification#notification.from}])
+                                                                              end) || To <- Bundle],
+                                            ?FAIL(?INFO_OK);
+                                        {aborted, _} ->
+                                            ?FAIL(?INFO_DB_ERROR)
+                                    end
                             end;
                         _ ->
                            ?FAIL(?INFO_PARAMETER_ERROR)
