@@ -2,28 +2,3 @@
 #!/bin/bash
 ## 生成头文件
 `dirname $0`/erl_tool_start generate_info $@
-
-## 发布客户端想要csv
-## Little-endian UTF-16 Unicode text
-. `dirname $0`/tools_env
-CSV_DIR=$SERVER_HOME/.data_tmp/
-csv_src=$SERVER_HOME/config/base_error_code.csv
-csv_server_file=$CSV_DIR/base_error_code.csv 
-# csv_client_file=$SERVER_HOME/common_svn/Config/Client/ConfigErrorCodeData.csv 
-
-grep -Ev "^$|#" $csv_src > $csv_server_file
-# cp $csv_server_file $csv_client_file
-# unix2dos $csv_client_file
-# OS_NAME=$(uname -s 2>/dev/null)
-# OS_NAME_L=$( echo "$OS_NAME" | tr '[:upper:]' '[:lower:]' )
-# case ${OS_NAME_L} in
-#     linux )
-#         iconv -f UTF-8 -t UTF-16 $csv_client_file > /tmp/tmp.csv;;
-#     darwin )
-#         (printf "\xff\xfe"; iconv -f UTF-8 -t UTF-16LE $csv_client_file) > /tmp/tmp.csv;;
-# esac
-# cp /tmp/tmp.csv $csv_client_file
-
-## 生成错误码的data数据
-
-. `dirname $0`/data_generate gen base_error_code
