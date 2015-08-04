@@ -1,4 +1,3 @@
-%% Warning:本文件由make_record自动生成，请不要手动修改
 -ifndef(DB_ACTIVITY_HRL).
 -define(DB_ACTIVITY_HRL, true).
 %% activity => activity
