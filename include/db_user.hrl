@@ -1,7 +1,7 @@
 -ifndef(DB_USER_HRL).
 -define(DB_USER_HRL, true).
 %% user => user
--record(user, {
+-record(player, {
           id,                                   %% 
           name,                                 %% 
           display_name,                         %% 

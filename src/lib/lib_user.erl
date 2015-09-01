@@ -24,7 +24,7 @@ user_name(Id) ->
     case user(Id) of
         [] ->
             <<"未知用户"/utf8>>;
-        #user{
+        #player{
            name = Name
           } ->
             Name
@@ -48,7 +48,7 @@ check_is_visitor(UserId) ->
     case user(UserId) of
         [] ->
             ?FAIL(?INFO_USER_NOT_FOUND);
-        #user{
+        #player{
            group_id = ?USER_GROUP_VISITOR
           } ->
             ?FAIL(?INFO_VISITOR);
@@ -64,7 +64,7 @@ is_admin_user(Token) ->
             case lib_user:user(UserId) of
                 [] ->
                     ?FAIL(?INFO_USER_NOT_FOUND);
-                #user{
+                #player{
                    group_id = ?USER_GROUP_ADMIN
                   } ->
                     ok;

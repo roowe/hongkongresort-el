@@ -11,7 +11,7 @@
                        db_pool = hongkongresort,
                        table_name = user,
                        record_name = user,
-                       fields = record_info(fields, user)
+                       fields = record_info(fields, player)
                       }).
 
 

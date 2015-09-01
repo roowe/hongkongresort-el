@@ -32,9 +32,9 @@ is_record(login) ->
     true;
 is_record(notification) ->
     true;
-is_record(record_mysql_info) ->
+is_record(player) ->
     true;
-is_record(user) ->
+is_record(record_mysql_info) ->
     true;
 is_record(user_activity_relation) ->
     true;
@@ -56,10 +56,10 @@ get_fields(login) ->
     record_info(fields, login);
 get_fields(notification) ->
     record_info(fields, notification);
+get_fields(player) ->
+    record_info(fields, player);
 get_fields(record_mysql_info) ->
     record_info(fields, record_mysql_info);
-get_fields(user) ->
-    record_info(fields, user);
 get_fields(user_activity_relation) ->
     record_info(fields, user_activity_relation);
 get_fields(_) ->
@@ -80,10 +80,10 @@ match_info(login) ->
     ?MATCH_SPEC(login);
 match_info(notification) ->
     ?MATCH_SPEC(notification);
+match_info(player) ->
+    ?MATCH_SPEC(player);
 match_info(record_mysql_info) ->
     ?MATCH_SPEC(record_mysql_info);
-match_info(user) ->
-    ?MATCH_SPEC(user);
 match_info(user_activity_relation) ->
     ?MATCH_SPEC(user_activity_relation);
 match_info(Table) ->
@@ -104,10 +104,10 @@ new(login) ->
      io:format("~w~n", [lists:zip(record_info(fields, login), tl(tuple_to_list(#login{})))]);
 new(notification) ->
      io:format("~w~n", [lists:zip(record_info(fields, notification), tl(tuple_to_list(#notification{})))]);
+new(player) ->
+     io:format("~w~n", [lists:zip(record_info(fields, player), tl(tuple_to_list(#player{})))]);
 new(record_mysql_info) ->
      io:format("~w~n", [lists:zip(record_info(fields, record_mysql_info), tl(tuple_to_list(#record_mysql_info{})))]);
-new(user) ->
-     io:format("~w~n", [lists:zip(record_info(fields, user), tl(tuple_to_list(#user{})))]);
 new(user_activity_relation) ->
      io:format("~w~n", [lists:zip(record_info(fields, user_activity_relation), tl(tuple_to_list(#user_activity_relation{})))]);
 new(_) ->

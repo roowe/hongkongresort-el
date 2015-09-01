@@ -131,9 +131,9 @@ pack(Activity, Images, HostUser, Relation) ->
                   HostUser =:= [] ->
                       Base;
                   true ->
-                      [{host, ?JSON([{id, HostUser#user.id},
-                                     {email, HostUser#user.email},
-                                     {name, HostUser#user.name}])} | Base]
+                      [{host, ?JSON([{id, HostUser#player.id},
+                                     {email, HostUser#player.email},
+                                     {name, HostUser#player.name}])} | Base]
               end,
     AddRelation = if
                       Relation =:= undefined ->
