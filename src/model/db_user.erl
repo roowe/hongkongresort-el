@@ -9,7 +9,7 @@
 
 -define(TABLE_CONF, #record_mysql_info{
                        db_pool = hongkongresort,
-                       table_name = user,
+                       table_name = player,
                        record_name = user,
                        fields = record_info(fields, player)
                       }).
