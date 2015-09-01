@@ -107,7 +107,7 @@ relation(undefined, _) ->
     undefined;
 relation(UserId, ActivityId) ->
     case db_user_activity_relation:user_activity_relation(UserId, ActivityId) of
-        {ok, [#user_activity_relation{
+        {ok, [#player_activity_relation{
                  relation = Relation
                 }]} ->
             Relation;

@@ -37,7 +37,7 @@ user_id_by_token(<<"">>) ->
 user_id_by_token(Token) ->
     case db_login:login_info(Token) of
         {ok, [#login{
-                 user_id = UserId
+                 player_id = UserId
                 }]} ->
             {ok, UserId};
         _ ->

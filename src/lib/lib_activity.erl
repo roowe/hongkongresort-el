@@ -143,8 +143,8 @@ join(UserId, ActivityId) ->
                         {ok, [_]} ->
                             ?FAIL(?INFO_ACTIVITY_JOINED);
                         {ok, []} ->
-                            UserActivityRelation = #user_activity_relation{
-                                                      user_id = UserId,
+                            UserActivityRelation = #player_activity_relation{
+                                                      player_id = UserId,
                                                       activity_id = ActivityId,
                                                       relation = 1, %% 文档这么写的
                                                       generated_time = Now

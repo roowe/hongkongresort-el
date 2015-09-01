@@ -1,8 +1,8 @@
 -ifndef(DB_USER_ACTIVITY_RELATION_HRL).
 -define(DB_USER_ACTIVITY_RELATION_HRL, true).
 %% user_activity_relation => user_activity_relation
--record(user_activity_relation, {
-          user_id,                              %% 
+-record(player_activity_relation, {
+          player_id,                              %% 
           activity_id,                          %% 
           relation,                             %% 
           generated_time,                       %% 

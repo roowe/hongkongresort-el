@@ -2,7 +2,7 @@
 -define(DB_LOGIN_HRL, true).
 %% login => login
 -record(login, {
-          user_id,                              %% 
+          player_id,                              %% 
           token,                                %% 
           timestamp                             %% 
          }).
